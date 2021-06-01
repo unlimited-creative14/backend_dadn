@@ -1,5 +1,7 @@
 var mqtt = require('mqtt');
-var putTempData = require("./azure_db");
+var db = require("./azure_db");
+
+putTempData = db.putTempData
 
 username = 'pipe1404'
 iokey = "aio_vSSW67Hkla1acSRfrqbIXTGWHpy1"
@@ -17,13 +19,13 @@ client = mqtt.connect("mqtts://io.adafruit.com", connectionOpts);
 
 client.on('connect', function () {
   client.subscribe(topicIn);
-  console.log(`IN Connected in ${topicIn}!`);
+  console.log(`IN Connected to ${topicIn}!`);
 })
 
 client.on('connect', function () {
   
   client.subscribe(topicOut);
-  console.log(`OUT Connected ${topicOut}!`);
+  console.log(`OUT Connected to ${topicOut}!`);
 })
 
 client.on(
@@ -38,9 +40,11 @@ client.on(
             try {
                 data = tempSensor["data"];
                 temp = data.split('-')[0]
-                console.log(`[${Date()}](${tempSensor["name"] + tempSensor['id']}): ${temp}*C`);
+                time = Date.now();
 
-                putTempData(tempSensor['id'], convToSQLTime(Date.now()), temp);
+                console.log(`[${time}](${tempSensor["name"] + tempSensor['id']}): ${temp}*C`);
+
+                putTempData(tempSensor['id'], time, temp);
             } catch (error) {
                 console.log(error + '\n' + "message:" + message);
             }
@@ -48,8 +52,3 @@ client.on(
         }
     }
 )
-
-function convToSQLTime(time)
-{
-  return new Date(time).toISOString().slice(0, 19).replace('T', ' ');
-}

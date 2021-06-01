@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/fdea7a57-d4d5-4cd5-93db-5c8c01191133/resourceGroups/DefaultResourceGroup-SEA/providers/Microsoft.Web/sites/mobile-web-app",
+    "appService.deploySubpath": "."
+}

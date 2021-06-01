@@ -12,7 +12,8 @@ const config = {
   server: "dadn-db.database.windows.net", // updated
   options: {
     database: "dadn-db", //update me
-    encrypt: true
+    encrypt: true,
+    useColumnNames: true
   }
 };
 
@@ -34,16 +35,18 @@ connection.on("connect", err => {
     }
   }
 
-  function putTempData(devID, time, tempValue)
+  function insertTempData(devID, time, tempValue)
   {
       console.log(`putTempData(${devID}, ${time}, ${tempValue})`);
       sqlStr = "INSERT INTO temp_history VALUES (@devid,@time,@value)"
       req = new Request(sqlStr, commonRequestCallback);
       req.addParameter("devid", TYPES.Int, devID);
-      req.addParameter("time", TYPES.DateTime, time);
+      req.addParameter("time", TYPES.DateTime, new Date(time)); // Use int to post timestamp
       req.addParameter("value", TYPES.Float, tempValue);
 
       connection.execSql(req);
   }
 
-  module.exports = putTempData;
+  exports.connection = connection;
+  exports.putTempData = insertTempData;
+  exports.commonRequestCallback = commonRequestCallback;
