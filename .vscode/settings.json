@@ -3,6 +3,28 @@
         "node_modules{,/**}",
         ".vscode{,/**}"
     ],
-    "appService.defaultWebAppToDeploy": "/subscriptions/fdea7a57-d4d5-4cd5-93db-5c8c01191133/resourceGroups/DefaultResourceGroup-SEA/providers/Microsoft.Web/sites/mobile-web-app",
-    "appService.deploySubpath": "."
+    "appService.deploySubpath": ".",
+    "azureFunctions.deploySubpath": ".",
+    "azureFunctions.postDeployTask": "npm install",
+    "azureFunctions.projectLanguage": "JavaScript",
+    "azureFunctions.projectRuntime": "~3",
+    "debug.internalConsoleOptions": "neverOpen",
+    "azureFunctions.preDeployTask": "npm prune",
+    "appService.defaultWebAppToDeploy": "/subscriptions/995f1aad-75a6-4641-bae4-5b837ebcbba4/resourceGroups/DefaultResourceGroup-SEA/providers/Microsoft.Web/sites/mydadn",
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "askForPassword": true,
+            "driver": "MySQL",
+            "name": "localhost",
+            "group": "nope",
+            "database": "dadnDB",
+            "username": "root"
+        }
+    ]
 }
