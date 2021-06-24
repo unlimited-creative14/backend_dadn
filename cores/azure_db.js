@@ -37,19 +37,21 @@ connection.on('connect', (err) => {
         rqtyt.on('requestCompleted', () => {
             // load active device
             rq = queryDevice(true);
-            rq.on('row', (dev) => {
-                activeDevices.push(dev);
-            });
+            rq.on('row', (dev) => activeDevices.push(dev));
             rq.on('requestCompleted', () => {
                 for (const dev of activeDevices) {
-                    rqp = getPatientWithDevid(dev.dev_id.value);
-                    rqp.on('row', (pat) => {
-                        activeMonitors[pat.pat_id.value] = new monitor(
-                            pat.pat_id.value,
-                            dev
-                        );
-                    });
-                    connection.execSql(rqp);
+                    let new_conn = this.newConnection();
+                    new_conn.on("connect", (err) => {
+                        var rqp = getPatientWithDevid(dev.dev_id.value);                    
+                        rqp.on('row', (pat) => {
+                            activeMonitors[pat.pat_id.value] = new monitor(
+                                pat.pat_id.value,
+                                dev
+                            );
+                        });
+                        new_conn.execSql(rqp);
+                    })                    
+                    new_conn.connect();
                 }
             });
             connection.execSql(rq);
@@ -89,6 +91,20 @@ function insertTempData(patid, time, tempValue) {
     req.addParameter('patid', TYPES.Int, patid);
     req.addParameter('time', TYPES.DateTime, new Date(time));
     req.addParameter('value', TYPES.Float, tempValue);
+
+    return req;
+}
+
+function getPatient(id)
+{
+    sqlStr = 'SELECT * FROM patient';
+    if (id)
+    {
+        sqlStr += ' WHERE pat_id = @patid';
+    }
+
+    req = new Request(sqlStr, commonRequestCallback);
+    req.addParameter('patid', TYPES.Int, id);
 
     return req;
 }
@@ -255,7 +271,8 @@ exports.removeMetadata = removeMetadata;
 exports.updateQtyt = updateQtyt;
 exports.queryTempData = queryTempData;
 // Long's Utils export
-exports.createRequest = createRequest;
-exports.executeRequest = executeRequest;
-exports.configureRequest = configureRequest;
-exports.runQuery = runQuery;
+// exports.createRequest = createRequest;
+// exports.executeRequest = executeRequest;
+// exports.configureRequest = configureRequest;
+// exports.runQuery = runQuery;
+// exports.getPatient = getPatient;
