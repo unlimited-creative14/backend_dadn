@@ -3,9 +3,6 @@ const mqtt = require('./mqtt_rel');
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
 
-username = 'pipe1404';
-iokey = 'aio_vSSW67Hkla1acSRfrqbIXTGWHpy1';
-
 activeDevices = [];
 qtyt = [];
 activeMonitors = {};
@@ -21,7 +18,7 @@ class monitor {
 
         this.dbconnection = db.newConnection();
         this.dbconnection.on('connect', () => {
-            client.on('message', function (topic, message) {
+            this.mqttconnection.on('message', function (topic, message) {
                 // message is Buffer
                 // Parse and process message here
                 if (topic == device.feed_in.value) {
@@ -41,9 +38,9 @@ class monitor {
                             rq.on('row', (col) =>
                                 activeMonitors[pat_id].putData(col)
                             );
-                            db.connection.execSql(rq);
+                            this.dbconnection.execSql(rq);
                         });
-                        db.connection.execSql(rqx);
+                        this.dbconnection.execSql(rqx);
                     } catch (error) {
                         console.log(error + '\n' + 'message:' + message);
                     }
@@ -64,7 +61,7 @@ class monitor {
 
     init_data() {
         // load data needed by qtyt
-        rq = [];
+        var rq = [];
         rq.push(db.queryTempData(this.pat_id, qtyt[0].duration.value));
         rq.push(db.queryTempData(this.pat_id, qtyt[1].duration.value));
         rq.push(db.queryTempData(this.pat_id, qtyt[2].duration.value));
