@@ -34,11 +34,16 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', requiresAuth(), usersRouter);
-app.use('/api/stat', requiresAuth(), statAPIRouter);
-app.use('/api/authenticate', requiresAuth(), authenticateROUTER);
-app.use('/api/core', requiresAuth(), coreAPIRouter);
-app.use('/api/admin', requiresAuth(), adminAPIRouter);
+// app.use('/users', requiresAuth(), usersRouter);
+// app.use('/api/stat', requiresAuth(), statAPIRouter);
+// app.use('/api/authenticate', requiresAuth(), authenticateROUTER);
+// app.use('/api/core', requiresAuth(), coreAPIRouter);
+// app.use('/api/admin', requiresAuth(), adminAPIRouter);
+app.use('/users',  usersRouter);
+app.use('/api/stat', statAPIRouter);
+app.use('/api/authenticate', authenticateROUTER);
+app.use('/api/core', coreAPIRouter);
+app.use('/api/admin', adminAPIRouter);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     next(createError(404));

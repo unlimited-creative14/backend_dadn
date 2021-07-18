@@ -61,4 +61,9 @@ router.post('/addUser', (req, res, next) => {
     next('/addUser/success');
 });
 
+// TODO assign patient to a doctor
+router.put('assignPatient/:doctorId', (req, res) => {
+    res.send('assign patient to a doctor');
+});
+
 module.exports = router;
