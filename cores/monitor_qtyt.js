@@ -10,8 +10,8 @@ activeMonitors = {};
 class monitor {
     constructor(patid, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
-            username,
-            iokey,
+            // username,
+            // iokey,
             device.feed_in.value,
             device.feed_out.value
         );

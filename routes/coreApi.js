@@ -52,7 +52,6 @@ router.post('/updateQtyt', (req, res) => {
     db.connection.execSql(rb);
 });
 
-
 // get device
 router.get('/getDevice/:inuse?', (req, res) => {
     if (req.params.inuse != undefined) {

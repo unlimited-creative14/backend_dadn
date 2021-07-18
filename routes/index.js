@@ -3,7 +3,7 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.send(req.oidc.isAuthenticated() ? 'Logged In' : 'Logged Out');
 });
 
 module.exports = router;

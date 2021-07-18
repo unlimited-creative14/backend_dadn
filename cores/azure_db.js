@@ -20,7 +20,7 @@ const config = {
     },
     server: process.env.server, // updated
     options: {
-        database: process.env.options_database, //update me
+        database: process.env.optionsDatabase, //update me
         encrypt: true,
         useColumnNames: true,
     },
@@ -52,7 +52,7 @@ connection.on('connect', (err) => {
                         new_conn.execSql(rqp);
                     })                    
                     new_conn.connect();
-                }
+                }   
             });
             connection.execSql(rq);
         });

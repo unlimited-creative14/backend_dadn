@@ -17,56 +17,6 @@ function onSqlDone(sqlreq, cb) {
     sqlreq.on('doneInProc', cb);
 }
 
-router.post('/signup', (req, res) => {
-    const { error } = registerValidation(req.body);
-    if (error)
-        return res.status(400).send({
-            message: error.details[0].message,
-            code: '400',
-        });
-
-    // const checkIfExisted = `SELECT * FROM users WHERE email = ${req.body.email}`;
-    // const checkRequest = new Request(checkIfExisted, (err) => {
-    //     if (err) throw 'Err on Check request';
-    // });
-
-    // checkRequest.on('row', (cols) => {
-    //     if (cols.length > 0)
-    //         return res.send({
-    //             message: 'Email is existed, please using another email',
-    //             code: '400',
-    //         });
-    // });
-
-    // checkRequest.on('requestCompleted', () => {
-    // TODO Hash the password
-    const salt = bcryptjs.genSaltSync(10);
-    const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
-    const date = new Date();
-    const sql = `INSERT INTO users (email, password, created_on, modified_on) VALUES (@email, @password, @created_on, @modified_on);`;
-    const request = new Request(sql, (err) => {
-        if (err) {
-            throw 'Err on signup request';
-        }
-    });
-
-    request.addParameter('email', TYPES.NVarChar, req.body.email);
-    request.addParameter('password', TYPES.NVarChar, hashedPassword);
-    request.addParameter('created_on', TYPES.DateTime, date);
-    request.addParameter('modified_on', TYPES.DateTime, date);
-
-    request.on('requestCompleted', () =>
-        res.send({
-            message: 'Created Success fully',
-            status: '201',
-        })
-    );
-    connection.execSql(request);
-    // });
-
-    // connection.execSql(checkRequest);
-});
-
 router.post('/signin', (req, res) => {
     const { error } = loginValidation(req.body);
     if (error)
@@ -84,12 +34,6 @@ router.post('/signin', (req, res) => {
     request.addParameter('email', TYPES.NVarChar, req.body.email);
     const resData = [];
     request.on('row', (cols) => {
-        for (const key in cols) {
-            if (Object.hasOwnProperty.call(cols, key)) {
-                const element = cols[key];
-                delete element.metadata;
-            }
-        }
         resData.push(cols);
     });
     request.on('requestCompleted', () => {
@@ -120,5 +64,4 @@ router.post('/signin', (req, res) => {
     });
     connection.execSql(request);
 });
-
 module.exports = router;

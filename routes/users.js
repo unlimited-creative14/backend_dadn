@@ -20,7 +20,7 @@ router.post('/addPatient', (req, res) => {
         }
     });
 
-    request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0)
+    request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);
     request.addParameter('first_name', TYPES.NVarChar, req.body.first_name);
     request.addParameter('last_name', TYPES.NVarChar, req.body.last_name);
     request.addParameter('email', TYPES.NVarChar, req.body.email);
@@ -28,38 +28,38 @@ router.post('/addPatient', (req, res) => {
     request.addParameter('created_on', TYPES.DateTime, date);
     request.addParameter('modified_on', TYPES.DateTime, date);
 
-    request.on('requestCompleted', () => res.status(200).send({
-        message: "success",
-        code: "200"
-    }));
+    request.on('requestCompleted', () =>
+        res.status(200).send({
+            message: 'success',
+            code: '200',
+        })
+    );
     connection.execSql(request);
 });
 
 router.get('/getAllPatients', (req, res) => {
     const sql = `SELECT * FROM patient ORDER BY first_name`;
-    const request = new Request(sql, err => {
-        if (err)
-            throw `Err on getAllPatients api`;
-    })
+    const request = new Request(sql, (err) => {
+        if (err) throw `Err on getAllPatients api`;
+    });
     const resdata = [];
-    
-     request.on('row', (cols) => {
+
+    request.on('row', (cols) => {
         for (const key in cols) {
             if (Object.hasOwnProperty.call(cols, key)) {
-                const element = cols[key];
-                delete element.metadata;
+                cols[key] = cols[key].value;
             }
         }
         resdata.push(cols);
-     });
-    
+    });
+
     onSqlDone(request, function (a, b, c) {
-        if (!res.headersSent) res.json(resdata);
+        if (!res.headersSent) res.send(resdata);
     });
     connection.execSql(request);
 });
 
-router.get('getPatientCaredByDocter', (req, res) => {
-    res.status(200).send({ message: "OK" });
-})
+router.get('searchPatientByName', (req, res) => {
+    res.status(200).send({ message: 'OK' });
+});
 module.exports = router;
