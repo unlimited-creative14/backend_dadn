@@ -4,6 +4,92 @@ const db = require('../cores/azure_db');
 const { Request, TYPES } = require('tedious');
 const bcryptjs = require('bcryptjs');
 const { registerValidation } = require('../utils/validation');
+const swaggerJSDoc = require('swagger-jsdoc');
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Success:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Created successfully
+ *         code:
+ *           type: int
+ *           description: 201
+ *       example:
+ *         message: Created successfully
+ *         code: 201
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Failure:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Email already existed
+ *         code:
+ *           type: int
+ *           description: 400
+ *       example:
+ *         message: Email already existed
+ *         code: 400
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CreateUserDto:
+ *       type: object
+ *       properties:
+ *         email:
+ *           type: string
+ *           description: nguyenphilong@gmail.com
+ *         password:
+ *           type: string
+ *           description: nguyenphilong
+ *         role:
+ *           type: int
+ *           description: 1
+ *       example:
+ *         email: nguyenphilong@gmail.com
+ *         password: nguyenphilong
+ *         role: 1
+ */
+
+/**
+ * @swagger
+ * /api/admin/user:
+ *   post:
+ *     summary: Insert a new user
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserDto'
+ *     responses:
+ *       201:
+ *         description: Created successfully
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         description: Email already existed
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Failure'
+ */
+
 
 router.post('/user', (req, res) => {
     const connection = db.connection;
@@ -45,7 +131,6 @@ router.post('/user', (req, res) => {
         const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
         const date = new Date();
         const sql = `INSERT INTO users (email, password, role,  created_on, modified_on) VALUES (@email, @password, @role,  @created_on, @modified_on)`;
-        // const sql = `SELECT * FROM users`;
         const request = new Request(sql, (err) => {
             if (err) {
                 console.log(err.message);
