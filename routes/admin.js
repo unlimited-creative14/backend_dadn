@@ -4,14 +4,8 @@ const db = require('../cores/azure_db');
 const { Request, TYPES } = require('tedious');
 const bcryptjs = require('bcryptjs');
 const { registerValidation } = require('../utils/validation');
-// done event may fall in to 1 of 3 events below
-function onSqlDone(sqlreq, cb) {
-    sqlreq.on('done', cb);
-    sqlreq.on('doneProc', cb);
-    sqlreq.on('doneInProc', cb);
-}
 
-router.post('/user', (req, res, next) => {
+router.post('/user', (req, res) => {
     const connection = db.connection;
     const { error } = registerValidation(req.body);
     if (error)
