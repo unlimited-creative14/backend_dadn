@@ -11,55 +11,70 @@ function onSqlDone(sqlreq, cb) {
     sqlreq.on('doneInProc', cb);
 }
 
-// router.post('/addUser/success', (req, res) => {
-//     const connection2 = db.newConnection();
-//     // TODO Hash the password
-//     const salt = bcryptjs.genSaltSync(10);
-//     const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
-//     const date = new Date();
-//     const sql = `INSERT INTO users (email, password, created_on, modified_on) VALUES (@email, @password, @created_on, @modified_on);`;
-//     const request = new Request(sql, (err) => {
-//         if (err) {
-//             throw 'Err on signup request';
-//         }
-//     });
+router.post('/user', (req, res, next) => {
+    const connection = db.connection;
+    const { error } = registerValidation(req.body);
+    if (error)
+        return res.status(400).send({
+            message: error.details[0].message.toString(),
+            code: 400,
+        });
+    let isExisted = false;
+    const checkIfExisted = `SELECT * FROM users WHERE email = @email`;
+    const checkRequest = new Request(checkIfExisted, (err, rowCount) => {
+        if (err) {
+            res.status(500).send({
+                message: err.message.toString(),
+                code: 500,
+            });
+        } else if (rowCount > 0) {
+            isExisted = true;
+            return res.send({
+                message: 'Email is existed, please using another email',
+                code: '400',
+            });
+        }
+    });
 
-//     request.addParameter('email', TYPES.VarChar, req.body.email);
-//     request.addParameter('password', TYPES.VarChar, hashedPassword);
-//     request.addParameter('created_on', TYPES.DateTime, date);
-//     request.addParameter('modified_on', TYPES.DateTime, date);
+    checkRequest.addParameter('email', TYPES.VarChar, req.body.email);
 
-//     request.on('requestCompleted', () =>
-//         res.send({
-//             message: 'Created Success fully',
-//             status: '201',
-//         })
-//     );
-//     connection2.execSql(request);
-// });
+    checkRequest.on('requestCompleted', (err, rowCount) => {
+        if (isExisted) return;
+        if (err)
+            return res.send({
+                message: 'Error on checking user process',
+                code: '500',
+            });
 
-// router.post('/addUser', (req, res, next) => {
-//     const connection1 = db.connection;
-//     const { error } = registerValidation(req.body);
-//     if (error)
-//         return res.status(400).send({
-//             message: error.details[0].message,
-//             code: '400',
-//         });
+        // TODO Hash the password
+        const salt = bcryptjs.genSaltSync(10);
+        const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
+        const date = new Date();
+        const sql = `INSERT INTO users (email, password, role,  created_on, modified_on) VALUES (@email, @password, @role,  @created_on, @modified_on)`;
+        // const sql = `SELECT * FROM users`;
+        const request = new Request(sql, (err) => {
+            if (err) {
+                console.log(err.message);
+            }
+        });
 
-//     const checkIfExisted = `SELECT * FROM users WHERE email = ${req.body.email}`;
-//     const checkRequest = new Request(checkIfExisted, (err, rowCount) => {
-//         if (err) throw 'Error on Check request';
-//         else if (rowCount.length > 0)
-//             return res.send({
-//                 message: 'Email is existed, please using another email',
-//                 code: '400',
-//             });
-//     });
+        request.addParameter('email', TYPES.VarChar, req.body.email);
+        request.addParameter('password', TYPES.VarChar, hashedPassword);
+        request.addParameter('created_on', TYPES.DateTime, date);
+        request.addParameter('modified_on', TYPES.DateTime, date);
+        request.addParameter('role', TYPES.Int, req.body.role || 0);
 
-//     connection1.execSql(checkRequest);
-//     next('/addUser/success');
-// });
+        request.on('requestCompleted', () =>
+            res.send({
+                message: 'Created Success fully',
+                status: '201',
+            })
+        );
+        connection.execSql(request);
+    });
+
+    connection.execSql(checkRequest);
+});
 
 // TODO assign patient to a doctor
 router.put('assignPatient/:doctorId', (req, res) => {
