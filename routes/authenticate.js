@@ -5,17 +5,9 @@ const { Request, TYPES } = require('tedious');
 const connection = db.connection;
 const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs');
-// Validation
 const dotenv = require('dotenv');
 dotenv.config();
-const { registerValidation, loginValidation } = require('../utils/validation');
-
-// done event may fall in to 1 of 3 events below
-function onSqlDone(sqlreq, cb) {
-    sqlreq.on('done', cb);
-    sqlreq.on('doneProc', cb);
-    sqlreq.on('doneInProc', cb);
-}
+const { loginValidation } = require('../utils/validation');
 
 router.post('/signin', (req, res) => {
     const { error } = loginValidation(req.body);
@@ -39,7 +31,7 @@ router.post('/signin', (req, res) => {
     request.on('requestCompleted', () => {
         if (resData.length < 1)
             return res.send({
-                message: 'Please enter a valid email',
+                message: `Email is not existed`,
                 code: '400',
             });
         else if (resData.length > 0) {
@@ -58,6 +50,7 @@ router.post('/signin', (req, res) => {
                     authToken: token,
                     message: 'Login successfully',
                     code: '200',
+                    role: resData[0].role.value,
                 });
             }
         }
