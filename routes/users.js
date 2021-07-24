@@ -64,6 +64,24 @@ function onSqlDone(sqlreq, cb) {
  * @swagger
  * components:
  *   schemas:
+ *     Failure:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Failure
+ *         code:
+ *           type: int
+ *           description: 400
+ *       example:
+ *         message: Failure
+ *         code: 400
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
  *     TreatmentDetail:
  *       type: object
  *       properties:
@@ -344,7 +362,7 @@ router.put('/patients/:patientId', (req, res) => {
  *             $ref: '#/components/schemas/Success'
  *     responses:
  *       200:
- *         description: Get information of a user by id
+ *         description: Insert a new treatment successfully
  *         contents:
  *           application/json:
  *             schema:
@@ -359,7 +377,6 @@ router.put('/patients/:patientId', (req, res) => {
 router.post('/patients/:patientId/treatments', (req, res) => {
     const date = new Date();
     const sql = `insert into treatment_patient (treatment_id, patient_id, last_modified) values(@treatment_id, @patient_id, @last_modified)`;
-    const patId = parseInt(req.params.patientId);
     const request = new Request(sql, (err) => {
         if (err)
             res.send({
@@ -368,7 +385,7 @@ router.post('/patients/:patientId/treatments', (req, res) => {
             });
     });
     request.addParameter('treatment_id', TYPES.Int, req.body.treatmentId);
-    request.addParameter('patient_id', TYPES.Int, patId);
+    request.addParameter('patient_id', TYPES.Int, parseInt(req.params.patientId));
     request.addParameter('last_modified', TYPES.DateTime, date);
     request.on('requestCompleted', () =>
         res.status(200).send({
@@ -405,7 +422,7 @@ router.post('/patients/:patientId/treatments', (req, res) => {
  */
 
 router.get('/patients/:patientId/treatments', (req, res) => {
-    const sql = `select * from treatment where treatment_id in (select treatment_id from treatment_patient where patient_id = ${req.params.patientId});`;
+    const sql = `select * from treatment_patient where treatment_id in (select treatment_id from treatment_patient where patient_id = @patient_id)`;
     const request = new Request(sql, (err) => {
         if (err)
             res.send({
@@ -414,6 +431,7 @@ router.get('/patients/:patientId/treatments', (req, res) => {
             });
     });
 
+    request.addParameter('patient_id', TYPES.Int, parseInt(req.params.patientId))
     let result = [];
     request.on('row', (cols) => {
         for (const key in cols) {
@@ -423,10 +441,34 @@ router.get('/patients/:patientId/treatments', (req, res) => {
         }
         result.push(cols);
     });
-    onSqlDone(request, (a, b, c) => {
+    onSqlDone(request, () => {
         if (!res.headersSent) return res.send(result);
     });
     connection.execSql(request);
 });
 
+// router.get('/profile', (req, res) => {
+//     const sql = `select * from users where treatment_id in (select treatment_id from treatment_patient where patient_id = ${req.params.patientId});`;
+//     const request = new Request(sql, (err) => {
+//         if (err)
+//             res.send({
+//                 status: 400,
+//                 message: 'This patient was not found',
+//             });
+//     });
+
+//     let result = [];
+//     request.on('row', (cols) => {
+//         for (const key in cols) {
+//             if (Object.hasOwnProperty.call(cols, key)) {
+//                 cols[key] = cols[key].value;
+//             }
+//         }
+//         result.push(cols);
+//     });
+//     onSqlDone(request, (a, b, c) => {
+//         if (!res.headersSent) return res.send(result);
+//     });
+//     connection.execSql(request);
+// });
 module.exports = router;
