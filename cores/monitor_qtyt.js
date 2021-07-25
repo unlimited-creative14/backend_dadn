@@ -8,10 +8,10 @@ qtyt = [];
 activeMonitors = {};
 
 class monitor {
-    constructor(patid, device) {
+    constructor(username, iokey, patid, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
-            // username,
-            // iokey,
+            username,
+            iokey,
             device.feed_in.value,
             device.feed_out.value
         );
@@ -148,8 +148,8 @@ class monitor {
 warning_str = {
     '00': 'Binh thuong',
     '01': 'Sot nhe',
-    11: 'Sot nang',
-    10: 'Nguy hiem',
+    '11': 'Sot nang',
+    '10': 'Nguy hiem',
 };
 
 // handle qtyt event

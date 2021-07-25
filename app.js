@@ -6,7 +6,6 @@ const logger = require('morgan');
 const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 // Router
-const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const statAPIRouter = require('./routes/statApi');
 const authenticateROUTER = require('./routes/authenticate.js');
@@ -38,10 +37,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/documentation', swaggerUI.serve, swaggerUI.setup(specs));
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/users',verifyToken, usersRouter);
 app.use('/api/stat', statAPIRouter);
-app.use('/api/authenticate', authenticateROUTER);
+app.use('/', authenticateROUTER);
 app.use('/api/core', coreAPIRouter);
 app.use('/api/admin', adminAPIRouter);
 // catch 404 and forward to error handler

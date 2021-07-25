@@ -45,6 +45,8 @@ connection.on('connect', (err) => {
                         var rqp = getPatientWithDevid(dev.dev_id.value);                    
                         rqp.on('row', (pat) => {
                             activeMonitors[pat.pat_id.value] = new monitor(
+                                process.env.USER_NAME,
+                                process.env.IO_KEY,
                                 pat.pat_id.value,
                                 dev
                             );
