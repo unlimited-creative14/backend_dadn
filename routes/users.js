@@ -10,6 +10,83 @@ function onSqlDone(sqlreq, cb) {
     sqlreq.on('doneProc', cb);
     sqlreq.on('doneInProc', cb);
 }
+
+// TODO Failure Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Failure:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Email already existed
+ *         code:
+ *           type: int
+ *           description: 400
+ *       example:
+ *         message: Email already existed
+ *         code: 400
+ */
+
+// TODO Update Success Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UpdateSuccess:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Assigned successfully
+ *         code:
+ *           type: int
+ *           description: 200
+ *       example:
+ *         message: Assigned successfully
+ *         code: 201
+ */
+
+//TODO UpdatePatientDto Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UpdatePatientDto:
+ *       type: object
+ *       properties:
+ *         first_name:
+ *           type: string
+ *           description: The first name of the patient
+ *         last_name:
+ *           type: string
+ *           description: The last name of the patient
+ *         email:
+ *           type: string
+ *           description: The email of the patient
+ *         phone:
+ *           type: string
+ *           description: The phone number of the patient
+ *         dev_id:
+ *           type: int
+ *           description: The id of the device that measure the patient's temperature
+ *         doctor_id:
+ *           type: int
+ *           description: The id of the doctor who cares for this patient
+ *         status:
+ *           type: int
+ *           description: The number indicate the status of the patient
+ *       example:
+ *         first_name: long
+ *         last_name: nguyen
+ *         email: malongnhan@gmail.com
+ *         phone: "0346156078"
+ *         dev_id: 1
+ *         doctor_id: 1
+ *         status: 1
+ */
 // TODO Patients schema
 /**
  * @swagger
@@ -53,7 +130,7 @@ function onSqlDone(sqlreq, cb) {
  *         first_name: long
  *         last_name: nguyen
  *         email: malongnhan@gmail.com
- *         phone: 0346156078
+ *         phone: "0346156078"
  *         created_on: 2020-12-12T00:00:00.0000000
  *         modified_on: 2020-12-12T00:00:00.0000000
  *         dev_id: 1
@@ -236,7 +313,7 @@ router.get('/patients', (req, res) => {
  * @swagger
  * /users/patients:
  *   post:
- *     summary: Create a new patient
+ *     summary: Doctor accept a new patient
  *     tags: [Users]
  *     requestBody:
  *       required: true
@@ -341,16 +418,19 @@ router.get('/patients/:patientId', (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Patients'
+ *             $ref: '#/components/schemas/UpdatePatientDto'
  *     responses:
  *       200:
  *         description: The patient was successfully modified
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Patients'
- *       500:
- *         description: Some server error
+ *               $ref: '#/components/schemas/UpdateSuccess'
+ *       400:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Failure'
  */
 router.put('/patients/:patientId', (req, res) => {
     const date = new Date();
@@ -401,7 +481,7 @@ router.put('/patients/:patientId', (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Success'
+ *             $ref: '#/components/schemas/Treatments'
  *     responses:
  *       200:
  *         description: Insert a new treatment successfully
@@ -409,11 +489,11 @@ router.put('/patients/:patientId', (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Success'
- *       500:
+ *       400:
  *         contents:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Success'
+ *               $ref: '#/components/schemas/Failure'
  */
 
 router.post('/patients/:patientId/treatments', (req, res) => {
@@ -427,8 +507,8 @@ router.post('/patients/:patientId/treatments', (req, res) => {
     const request = new Request(sql, (err) => {
         if (err)
             res.send({
-                status: 400,
                 message: 'This patient was not found',
+                code: 400,
             });
     });
     request.addParameter('treatment_id', TYPES.Int, req.body.treatment_id);
@@ -466,6 +546,11 @@ router.post('/patients/:patientId/treatments', (req, res) => {
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/TreatmentDetail'
+ *       400:
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Failure'
  */
 
 router.get('/patients/:patientId/treatments', (req, res) => {
@@ -473,8 +558,8 @@ router.get('/patients/:patientId/treatments', (req, res) => {
     const request = new Request(sql, (err) => {
         if (err)
             res.send({
-                status: 400,
                 message: 'This patient was not found',
+                code: 400,
             });
     });
 
