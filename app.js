@@ -39,6 +39,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/documentation', swaggerUI.serve, swaggerUI.setup(specs));
 app.use('/', indexRouter);
+app.use('/users', verifyToken, usersRouter);
 app.use('/api/authenticate', authenticateROUTER);
 app.use('/api/core', coreAPIRouter);
 // catch 404 and forward to error handler
