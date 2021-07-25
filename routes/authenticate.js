@@ -8,7 +8,7 @@ const bcryptjs = require('bcryptjs');
 // Validation
 const dotenv = require('dotenv');
 dotenv.config();
-const { registerValidation, loginValidation } = require('../utils/validation');
+//const { registerValidation, loginValidation } = require('../utils/validation');
 
 // done event may fall in to 1 of 3 events below
 function onSqlDone(sqlreq, cb) {
