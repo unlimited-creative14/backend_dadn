@@ -40,8 +40,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/documentation', swaggerUI.serve, swaggerUI.setup(specs));
 app.use('/', indexRouter);
 app.use('/users', verifyToken, usersRouter);
+app.use('/api/stat', verifyToken, statAPIRouter);
 app.use('/api/authenticate', authenticateROUTER);
-app.use('/api/core', coreAPIRouter);
+app.use('/api/core', verifyToken, coreAPIRouter);
 app.use('/api/admin', verifyToken, adminAPIRouter);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
