@@ -41,13 +41,12 @@ router.post('/signin', (req, res) => {
             );
             if (!validPass)
                 return res.status(400).send({
-                    message: 'Invalid password',
+                    message: 'Invalid password',    
                     code: '400',
                 });
             else {
                 const token = jwt.sign(resData[0], process.env.TOKEN_SECRET);
-                return res.status(200).send({
-                    authToken: token,
+                return res.header('auth-token',token).status(200).send({
                     message: 'Login successfully',
                     code: '200',
                     role: resData[0].role.value,
@@ -58,3 +57,4 @@ router.post('/signin', (req, res) => {
     connection.execSql(request);
 });
 module.exports = router;
+    

@@ -10,6 +10,7 @@ function onSqlDone(sqlreq, cb) {
     sqlreq.on('doneProc', cb);
     sqlreq.on('doneInProc', cb);
 }
+// TODO Patients schema
 /**
  * @swagger
  * components:
@@ -60,6 +61,7 @@ function onSqlDone(sqlreq, cb) {
  *         status: 1
  */
 
+// TODO Failure schema
 /**
  * @swagger
  * components:
@@ -78,6 +80,38 @@ function onSqlDone(sqlreq, cb) {
  *         code: 400
  */
 
+//TODO Profile schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Profile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: int
+ *           description: 14
+ *         email:
+ *           type: string
+ *           description: malongnhan@gmail.com
+ *         created_on:
+ *           type: string
+ *           description: 2021-07-24T00:00:00.000Z
+ *         modified_on:
+ *           type: string
+ *           description: 2021-07-24T00:00:00.000Z
+ *         role: 
+ *           type: int
+ *           description: 0
+ *       example:
+ *         id: 14
+ *         email: long.nguyenmalongnhan@hcmut.edu.vn
+ *         created_on: 2020-12-12T00:00:00.0000000
+ *         modified_on: 2020-12-12T00:00:00.0000000
+ *         role: 0
+ */
+
+// TODO TreatmentDetail Schema
 /**
  * @swagger
  * components:
@@ -157,7 +191,7 @@ function onSqlDone(sqlreq, cb) {
  * @swagger
  * /users/patients:
  *   get:
- *     summary: Returns the list of all the patients
+ *     summary: Returns the list of all the patients of this us
  *     tags: [Users]
  *     responses:
  *       200:
@@ -171,15 +205,17 @@ function onSqlDone(sqlreq, cb) {
  */
 router.get('/patients', (req, res) => {
     let sql;
-    if (!req.query.name) sql = `SELECT * FROM patient ORDER BY pat_id desc`;
+    if (!req.query.name) sql = `SELECT * FROM patient where patient.doctor_id = @doctor_id ORDER BY pat_id desc`;
     else
-        sql = `SELECT * FROM patient WHERE patient.first_name LIKE @query OR patient.last_name LIKE @query order by pat_id desc`;
+        sql = `SELECT * FROM patient WHERE patient.first_name LIKE @query OR patient.last_name LIKE @query and patient.doctor_id = @doctor_id order by pat_id desc `;
     const request = new Request(sql, (err) => {
         if (err) throw `Err on getAllPatients api`;
     });
     const resdata = [];
+    request.addParameter('doctor_id', TYPES.Int, req.user.id.value);
     if (req.query.name)
         request.addParameter('query', TYPES.VarChar, req.query.name);
+    
     request.on('row', (cols) => {
         for (const key in cols) {
             if (Object.hasOwnProperty.call(cols, key)) {
@@ -189,9 +225,10 @@ router.get('/patients', (req, res) => {
         resdata.push(cols);
     });
 
-    onSqlDone(request, function (a, b, c) {
-        if (!res.headersSent) res.send(resdata);
+    request.on('requestCompleted', () => {
+        res.status(200).send(resdata);
     });
+
     connection.execSql(request);
 });
 
@@ -239,7 +276,7 @@ router.post('/patients', (req, res) => {
     request.on('requestCompleted', () =>
         res.status(200).send({
             message: 'success',
-            code: '200',
+            code: 200,
         })
     );
     connection.execSql(request);
@@ -273,8 +310,8 @@ router.get('/patients/:patientId', (req, res) => {
     const request = new Request(sql, (err) => {
         if (err)
             res.send({
-                status: 400,
                 message: 'This patient was not found',
+                code: 400,
             });
     });
     request.addParameter('patientId', TYPES.Int, req.params.patientId);
@@ -320,7 +357,12 @@ router.put('/patients/:patientId', (req, res) => {
     const sql = `update patient set first_name = @first_name, last_name = @last_name, email = @email, phone = @phone, modified_on = @modified_on, dev_id = @dev_id, doctor_id = @doctor_id, "status" = @status where patient.pat_id = @pat_id`;
 
     const request = new Request(sql, (err) => {
-        if (err) console.log(err);
+        if (err) {
+            return res.status(400).send({
+                message: 'Patient not existed',
+                code: 400,
+            });
+        }
     });
     request.addParameter('first_name', TYPES.VarChar, req.body.first_name);
     request.addParameter('last_name', TYPES.VarChar, req.body.last_name);
@@ -335,7 +377,7 @@ router.put('/patients/:patientId', (req, res) => {
     request.on('requestCompleted', () =>
         res.status(200).send({
             message: 'success',
-            code: '200',
+            code: 200,
         })
     );
     connection.execSql(request);
@@ -375,6 +417,11 @@ router.put('/patients/:patientId', (req, res) => {
  */
 
 router.post('/patients/:patientId/treatments', (req, res) => {
+    if (req.body.treatment_id > 3 || req.body.treatment_id < 1)
+        return res.send({
+            message: 'Invalid treatment',
+            code: 400,
+        });
     const date = new Date();
     const sql = `insert into treatment_patient (treatment_id, patient_id, last_modified) values(@treatment_id, @patient_id, @last_modified)`;
     const request = new Request(sql, (err) => {
@@ -384,13 +431,13 @@ router.post('/patients/:patientId/treatments', (req, res) => {
                 message: 'This patient was not found',
             });
     });
-    request.addParameter('treatment_id', TYPES.Int, req.body.treatmentId);
+    request.addParameter('treatment_id', TYPES.Int, req.body.treatment_id);
     request.addParameter('patient_id', TYPES.Int, parseInt(req.params.patientId));
     request.addParameter('last_modified', TYPES.DateTime, date);
     request.on('requestCompleted', () =>
         res.status(200).send({
-            message: 'success',
-            code: '200',
+            message: 'Insert treatment successfully',
+            code: 200,
         })
     );
     connection.execSql(request);
@@ -447,28 +494,28 @@ router.get('/patients/:patientId/treatments', (req, res) => {
     connection.execSql(request);
 });
 
-// router.get('/profile', (req, res) => {
-//     const sql = `select * from users where treatment_id in (select treatment_id from treatment_patient where patient_id = ${req.params.patientId});`;
-//     const request = new Request(sql, (err) => {
-//         if (err)
-//             res.send({
-//                 status: 400,
-//                 message: 'This patient was not found',
-//             });
-//     });
+/**
+ * @swagger
+ * /users/profile:
+ *   get:
+ *     summary: Return the profile of user
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: User profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 $ref: '#/components/schemas/Profile'
+ */
 
-//     let result = [];
-//     request.on('row', (cols) => {
-//         for (const key in cols) {
-//             if (Object.hasOwnProperty.call(cols, key)) {
-//                 cols[key] = cols[key].value;
-//             }
-//         }
-//         result.push(cols);
-//     });
-//     onSqlDone(request, (a, b, c) => {
-//         if (!res.headersSent) return res.send(result);
-//     });
-//     connection.execSql(request);
-// });
+router.get('/profile', (req, res) => {
+    res.send({
+        id: req.user.id.value,
+        email: req.user.email.value,
+        created_on: req.user.created_on.value,
+        modified_on: req.user.modified_on.value,
+        role: req.user.role.value,
+    });
+});
 module.exports = router;

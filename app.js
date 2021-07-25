@@ -12,19 +12,8 @@ const statAPIRouter = require('./routes/statApi');
 const authenticateROUTER = require('./routes/authenticate.js');
 const coreAPIRouter = require('./routes/coreApi.js');
 const adminAPIRouter = require('./routes/admin');
-
+const { verifyToken } = require('./utils/validation');
 const app = express();
-const { auth, requiresAuth } = require('express-openid-connect');
-app.use(
-    auth({
-        authRequired: false,
-        auth0Logout: true,
-        issuerBaseURL: process.env.ISSUER_BASE_URL,
-        baseURL: process.env.BASE_URL,
-        clientID: process.env.CLIENT_ID,
-        secret: process.env.SECRET,
-    })
-);
 
 const options = {
     definition: {
@@ -50,12 +39,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/documentation', swaggerUI.serve, swaggerUI.setup(specs));
 app.use('/', indexRouter);
-// app.use('/users', requiresAuth(), usersRouter);
-// app.use('/api/stat', requiresAuth(), statAPIRouter);
-// app.use('/api/authenticate', requiresAuth(), authenticateROUTER);
-// app.use('/api/core', requiresAuth(), coreAPIRouter);
-// app.use('/api/admin', requiresAuth(), adminAPIRouter);
-app.use('/users',  usersRouter);
+app.use('/users', usersRouter);
 app.use('/api/stat', statAPIRouter);
 app.use('/api/authenticate', authenticateROUTER);
 app.use('/api/core', coreAPIRouter);

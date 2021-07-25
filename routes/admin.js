@@ -5,6 +5,40 @@ const { Request, TYPES } = require('tedious');
 const bcryptjs = require('bcryptjs');
 const { registerValidation } = require('../utils/validation');
 const swaggerJSDoc = require('swagger-jsdoc');
+const connection = db.connection;
+
+// TODO UserResponseDto Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserResponseDto:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: int
+ *           description: The auto-generated id of the user
+ *         email:
+ *           type: string
+ *           description: The email of the user
+ *         created_on:
+ *           type: date time
+ *           description: the date and time that user enter the hospital
+ *         modified_on:
+ *           type: date time
+ *           description: the last time that user modified
+ *         role:
+ *           type: int
+ *           description: The number indicate the role of the user
+ *       example:
+ *         id: 1
+ *         email: malongnhan@gmail.com
+ *         created_on: 2020-12-12T00:00:00.0000000
+ *         modified_on: 2020-12-12T00:00:00.0000000
+ *         role: 1
+ */
+
+// TODO Success Schema
 /**
  * @swagger
  * components:
@@ -23,6 +57,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
  *         code: 201
  */
 
+// TODO Failure Schema
 /**
  * @swagger
  * components:
@@ -41,6 +76,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
  *         code: 400
  */
 
+// TODO Create User DTO
 /**
  * @swagger
  * components:
@@ -63,6 +99,30 @@ const swaggerJSDoc = require('swagger-jsdoc');
  *         role: 1
  */
 
+//TODO Create patient DTO
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CreateUserDto:
+ *       type: object
+ *       properties:
+ *         email:
+ *           type: string
+ *           description: nguyenphilong@gmail.com
+ *         password:
+ *           type: string
+ *           description: nguyenphilong
+ *         role:
+ *           type: int
+ *           description: 1
+ *       example:
+ *         email: nguyenphilong@gmail.com
+ *         password: nguyenphilong
+ *         role: 1
+ */
+
+// TODO Insert a new user
 /**
  * @swagger
  * /api/admin/user:
@@ -90,9 +150,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
  *               $ref: '#/components/schemas/Failure'
  */
 
-
 router.post('/user', (req, res) => {
-    const connection = db.connection;
     const { error } = registerValidation(req.body);
     if (error)
         return res.status(400).send({
@@ -103,7 +161,7 @@ router.post('/user', (req, res) => {
     const checkIfExisted = `SELECT * FROM users WHERE email = @email`;
     const checkRequest = new Request(checkIfExisted, (err, rowCount) => {
         if (err) {
-            res.status(500).send({
+            return res.status(500).send({
                 message: err.message.toString(),
                 code: 500,
             });
@@ -111,7 +169,7 @@ router.post('/user', (req, res) => {
             isExisted = true;
             return res.send({
                 message: 'Email is existed, please using another email',
-                code: '400',
+                code: 400,
             });
         }
     });
@@ -123,7 +181,7 @@ router.post('/user', (req, res) => {
         if (err)
             return res.send({
                 message: 'Error on checking user process',
-                code: '500',
+                code: 500,
             });
 
         // TODO Hash the password
@@ -146,7 +204,7 @@ router.post('/user', (req, res) => {
         request.on('requestCompleted', () =>
             res.send({
                 message: 'Created Success fully',
-                status: '201',
+                status: 201,
             })
         );
         connection.execSql(request);
@@ -155,9 +213,123 @@ router.post('/user', (req, res) => {
     connection.execSql(checkRequest);
 });
 
-// TODO assign patient to a doctor
-router.put('assignPatient/:doctorId', (req, res) => {
-    res.send('assign patient to a doctor');
+// TODO Insert a new patient
+/**
+ * @swagger
+ * /api/admin/patients:
+ *   post:
+ *     summary: Insert a new patient
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreatePatientDto'
+ *     responses:
+ *       201:
+ *         description: Created successfully
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         description: Email already existed
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Failure'
+ */
+
+router.post('/patients', (req, res) => {
+    const date = new Date();
+    let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, status) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @status)`;
+    const request = new Request(sql, (err) => {
+        if (err) {
+            throw 'Err on addPatient request';
+        }
+    });
+
+    request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);
+    request.addParameter('first_name', TYPES.VarChar, req.body.first_name);
+    request.addParameter('last_name', TYPES.VarChar, req.body.last_name);
+    request.addParameter('email', TYPES.VarChar, req.body.email);
+    request.addParameter('phone', TYPES.VarChar, req.body.phone);
+    request.addParameter('created_on', TYPES.DateTime, date);
+    request.addParameter('modified_on', TYPES.DateTime, date);
+    request.addParameter('status', TYPES.Int, req.body.status || 0);
+
+    request.on('requestCompleted', () =>
+        res.status(200).send({
+            message: 'success',
+            code: 200,
+        })
+    );
+    connection.execSql(request);
 });
 
+// TODO assign patient to a doctor
+router.put('/patients/:patientId', (req, res) => {
+    const date = new Date();
+    const sql = `update patient set doctor_id = @doctor_id where patient.pat_id = @pat_id`;
+
+    const request = new Request(sql, (err) => {
+        if (err) {
+            return res.status(400).send({
+                message: 'Patient not existed',
+                code: 400,
+            });
+        }
+    });
+    request.addParameter('modified_on', TYPES.DateTime, date);
+    request.addParameter('doctor_id', TYPES.Int, req.body.doctor_id);
+    request.addParameter('pat_id', TYPES.Int, req.params.patientId);
+
+    request.on('requestCompleted', () =>
+        res.status(200).send({
+            message: 'success',
+            code: 200,
+        })
+    );
+    connection.execSql(request);
+});
+
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Returns the list of all users
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: The list of the users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/UserResponseDto'
+ */
+router.get('/users', (req, res) => {
+    let sql = `SELECT * FROM users order by users.id`;
+    const request = new Request(sql, (err) => {
+        if (err) throw `Err on getAllPatients api`;
+    });
+    const resdata = [];
+
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
+        }
+        resdata.push(cols);
+    });
+
+    request.on('requestCompleted', () => {
+        return res.send(resdata);
+    });
+
+    connection.execSql(request);
+});
 module.exports = router;
