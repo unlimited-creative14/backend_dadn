@@ -7,6 +7,40 @@ const { registerValidation } = require('../utils/validation');
 const swaggerJSDoc = require('swagger-jsdoc');
 const connection = db.connection;
 
+// TODO CreatePatientDto Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CreatePatientDto:
+ *       type: object
+ *       properties:
+ *         dev_id:
+ *           type: int
+ *           description: The id of the device of patient
+ *         email:
+ *           type: string
+ *           description: The email of the patient
+ *         first_name:
+ *           type: string
+ *           description: The first name of the patient
+ *         last_name:
+ *           type: string
+ *           description: The last name of the patient
+ *         phone:
+ *           type: string
+ *           description: The phone number of the patient
+ *         status:
+ *           type: int
+ *           description: The status of the patient
+ *       example:
+ *         dev_id: 1
+ *         email: malongnhan@gmail.com
+ *         first_name: long
+ *         last_name: nguyen
+ *         phone: "0346156078"
+ *         status: 1
+ */
 // TODO UserResponseDto Schema
 /**
  * @swagger
@@ -54,6 +88,24 @@ const connection = db.connection;
  *           description: 201
  *       example:
  *         message: Created successfully
+ *         code: 201
+ */
+// TODO Update Success Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UpdateSuccess:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Assigned successfully
+ *         code:
+ *           type: int
+ *           description: 200
+ *       example:
+ *         message: Assigned successfully
  *         code: 201
  */
 
@@ -245,9 +297,11 @@ router.post('/patients', (req, res) => {
     const date = new Date();
     let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, status) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @status)`;
     const request = new Request(sql, (err) => {
-        if (err) {
-            throw 'Err on addPatient request';
-        }
+        if(err)
+            return res.status(400).send({
+                    message: 'Error when create new patient',
+                    code: 400,
+                });
     });
 
     request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);
@@ -267,6 +321,27 @@ router.post('/patients', (req, res) => {
     );
     connection.execSql(request);
 });
+
+/**
+ * @swagger
+ * /api/admin/patients/{patientId}:
+ *   put:
+ *     summary: Assign a patient with a doctor
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 $ref: '#/components/schemas/UpdateSuccess'
+ *       400:
+ *         description: Failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 #ref: '#/components/schemas/Failure'  
+ */
 
 // TODO assign patient to a doctor
 router.put('/patients/:patientId', (req, res) => {
