@@ -33,7 +33,6 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-
 module.exports.registerValidation = registerValidation;
 module.exports.loginValidation = loginValidation;
 module.exports.verifyToken = verifyToken;
