@@ -4,12 +4,16 @@ const db = require('../cores/azure_db');
 const { Request, TYPES } = require('tedious');
 const swaggerJSDoc = require('swagger-jsdoc');
 const connection = db.connection;
+const dotenv = require('dotenv');
+dotenv.config();
+
 // done event may fall in to 1 of 3 events below
 function onSqlDone(sqlreq, cb) {
     sqlreq.on('done', cb);
     sqlreq.on('doneProc', cb);
     sqlreq.on('doneInProc', cb);
 }
+
 
 // TODO Failure Schema
 /**
@@ -177,7 +181,7 @@ function onSqlDone(sqlreq, cb) {
  *         modified_on:
  *           type: string
  *           description: 2021-07-24T00:00:00.000Z
- *         role: 
+ *         role:
  *           type: int
  *           description: 0
  *       example:
@@ -207,13 +211,13 @@ function onSqlDone(sqlreq, cb) {
  *           description: The time the user applied this treatment
  *         treatment_desc:
  *           type: string
- *           description: The desc of the treatment 
+ *           description: The desc of the treatment
  *       example:
  *         treatment_id: 1
  *         treatment_name: do hematocrit1
  *         treatment_time: null
  *         treatment_desc: fhewohoih
- * 
+ *
  */
 
 /**
@@ -282,7 +286,8 @@ function onSqlDone(sqlreq, cb) {
  */
 router.get('/patients', (req, res) => {
     let sql;
-    if (!req.query.name) sql = `SELECT * FROM patient where patient.doctor_id = @doctor_id ORDER BY pat_id desc`;
+    if (!req.query.name)
+        sql = `SELECT * FROM patient where patient.doctor_id = @doctor_id ORDER BY pat_id desc`;
     else
         sql = `SELECT * FROM patient WHERE patient.first_name LIKE @query OR patient.last_name LIKE @query and patient.doctor_id = @doctor_id order by pat_id desc `;
     const request = new Request(sql, (err) => {
@@ -292,7 +297,7 @@ router.get('/patients', (req, res) => {
     request.addParameter('doctor_id', TYPES.Int, req.user.id.value);
     if (req.query.name)
         request.addParameter('query', TYPES.VarChar, req.query.name);
-    
+
     request.on('row', (cols) => {
         for (const key in cols) {
             if (Object.hasOwnProperty.call(cols, key)) {
@@ -512,7 +517,11 @@ router.post('/patients/:patientId/treatments', (req, res) => {
             });
     });
     request.addParameter('treatment_id', TYPES.Int, req.body.treatment_id);
-    request.addParameter('patient_id', TYPES.Int, parseInt(req.params.patientId));
+    request.addParameter(
+        'patient_id',
+        TYPES.Int,
+        parseInt(req.params.patientId)
+    );
     request.addParameter('last_modified', TYPES.DateTime, date);
     request.on('requestCompleted', () =>
         res.status(200).send({
@@ -522,7 +531,6 @@ router.post('/patients/:patientId/treatments', (req, res) => {
     );
     connection.execSql(request);
 });
-
 
 /**
  * @swagger
@@ -563,7 +571,11 @@ router.get('/patients/:patientId/treatments', (req, res) => {
             });
     });
 
-    request.addParameter('patient_id', TYPES.Int, parseInt(req.params.patientId))
+    request.addParameter(
+        'patient_id',
+        TYPES.Int,
+        parseInt(req.params.patientId)
+    );
     let result = [];
     request.on('row', (cols) => {
         for (const key in cols) {
@@ -603,4 +615,6 @@ router.get('/profile', (req, res) => {
         role: req.user.role.value,
     });
 });
+
+
 module.exports = router;

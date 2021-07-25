@@ -3,10 +3,12 @@ const router = express.Router();
 const db = require('../cores/azure_db');
 const { Request, TYPES } = require('tedious');
 const bcryptjs = require('bcryptjs');
-const { registerValidation } = require('../utils/validation');
+const jwt = require('jsonwebtoken');
+const { registerValidation, loginValidation } = require('../utils/validation');
 const swaggerJSDoc = require('swagger-jsdoc');
 const connection = db.connection;
-
+const dotenv = require('dotenv');
+dotenv.config();
 // TODO CreatePatientDto Schema
 /**
  * @swagger
@@ -297,11 +299,11 @@ router.post('/patients', (req, res) => {
     const date = new Date();
     let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, status) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @status)`;
     const request = new Request(sql, (err) => {
-        if(err)
+        if (err)
             return res.status(400).send({
-                    message: 'Error when create new patient',
-                    code: 400,
-                });
+                message: 'Error when create new patient',
+                code: 400,
+            });
     });
 
     request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);
@@ -340,7 +342,7 @@ router.post('/patients', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *                 #ref: '#/components/schemas/Failure'  
+ *                 #ref: '#/components/schemas/Failure'
  */
 
 // TODO assign patient to a doctor
@@ -407,4 +409,5 @@ router.get('/users', (req, res) => {
 
     connection.execSql(request);
 });
+
 module.exports = router;
