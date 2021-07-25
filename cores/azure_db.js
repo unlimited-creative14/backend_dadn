@@ -6,18 +6,21 @@ const {
     activeMonitors,
 } = require('./monitor_qtyt');
 
+const dotenv = require('dotenv');
+dotenv.config();
+
 // Create connection to database
 const config = {
     authentication: {
         options: {
-            userName: 'malongnhan', // update me
-            password: 'Philong8*', // update me
+            userName: process.env.authUserName, // update me
+            password: process.env.authPassword, // update me
         },
         type: 'default',
     },
-    server: 'dadn-db-new.database.windows.net', // updated
+    server: process.env.server, // updated
     options: {
-        database: 'dadn-db-new', //update me
+        database: process.env.options_database, //update me
         encrypt: true,
         useColumnNames: true,
     },
@@ -160,14 +163,96 @@ function updateQtyt(qtyt) {
     req.addParameter('tfrom', TYPES.Float, qtyt.temp_from);
     req.addParameter('tto', TYPES.Float, qtyt.temp_to);
     req.addParameter('duration', TYPES.Float, qtyt.duration);
+
     return req;
 }
 
-const updateUser = userDetails => {
+// Long's Utils Function
+function configureRequest(sql, conn, parameters) {
+    var request = createRequest(sql, conn);
 
+    parameters.forEach(function (param) {
+        request.addParameter(param.name, param.type, param.data);
+    });
+
+    return request;
+}
+function createRequest(query, connection) {
+    var Request = require('tedious').Request;
+
+    var req = new Request(query, function (err, rowCount) {
+        if (err) {
+            console.log(err);
+        }
+
+        connection && connection.close();
+    });
+
+    return req;
+}
+function runQuery(query, connection, callback) {
+    var request = query;
+
+    if (typeof query == 'string') {
+        request = createRequest(query, connection);
+    }
+
+    var values = '';
+
+    // the rows are returned as a json array. Since it's sent in a batch,
+    // different events are raised.
+    // So the values are concatenated to create a single JSON object
+    request.on('row', function (column) {
+        values += column[0].value;
+    });
+
+    // if anything specific needs to be done after the process is complete
+    request.on('done', function (rowCount, more, rows) {
+        // check if the SQL Server returned anything
+        values = checkValues(values);
+
+        callback(values);
+    });
+
+    // if anything specific needs to be done after the stored procedure is complete
+    // however, if we use connection.execSql(), it emits doneProc instead of done.
+    request.on('doneProc', function (rowCount, more, rows) {
+        // check if the SQL Server returned anything
+        values = checkValues(values);
+        callback(values);
+    });
+
+    try {
+        executeRequest(request, connection);
+    } catch (err) {
+        throw err;
+    }
+
+    // return the values parsed as JSON
+    // return JSON.parse(values);
+    return values;
+}
+function checkValues(values) {
+    if (values === '') {
+        // needs to be set to null if the SQL Server return nothing.
+        // This is required to ensure JSON is correctly parsed.
+        values = null;
+    }
+
+    return values;
 }
 
+// execute request to pull the data
+function executeRequest(request, connection) {
+    connection.on('connect', function (err) {
+        if (err) {
+            console.log(err);
+            res.send(err);
+        }
 
+        connection.execSql(request);
+    });
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -185,4 +270,9 @@ exports.getPatientWithDevid = getPatientWithDevid;
 exports.removeMetadata = removeMetadata;
 exports.updateQtyt = updateQtyt;
 exports.queryTempData = queryTempData;
-exports.getPatient = getPatient;
+// Long's Utils export
+// exports.createRequest = createRequest;
+// exports.executeRequest = executeRequest;
+// exports.configureRequest = configureRequest;
+// exports.runQuery = runQuery;
+// exports.getPatient = getPatient;
