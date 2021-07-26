@@ -29,7 +29,7 @@ const { loginValidation } = require('../utils/validation');
 
 /**
  * @swagger
- * /users/login:
+ * /user/login:
  *   post:
  *     summary: User login
  *     tags: [Users]
@@ -56,7 +56,7 @@ router.get('/', (req, res) => {
     return res.send('aloha');
 });
 
-router.post('/users/login', (req, res) => {
+router.post('/user/login', (req, res) => {
     const { error } = loginValidation(req.body);
     if (error)
         return res.status(400).send({
