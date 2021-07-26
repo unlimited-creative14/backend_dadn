@@ -340,9 +340,10 @@ router.post('/patients', (req, res) => {
     const date = new Date();
     let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, doctor_id, status) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @doctor_id, @status)`;
     const request = new Request(sql, (err) => {
-        if (err) {
-            throw 'Err on addPatient request';
-        }
+        return res.status(400).send({
+            message: 'Patient not existed',
+            code: 400,
+        });
     });
 
     request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);
