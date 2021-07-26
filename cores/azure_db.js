@@ -97,18 +97,6 @@ function insertTempData(patid, time, tempValue) {
     return request;
 }
 
-function getPatient(id) {
-    sql = 'SELECT * FROM patient';
-    if (id) {
-        sql += ' WHERE pat_id = @patid';
-    }
-
-    request = new Request(sql, commonRequestCallback);
-    request.addParameter('patid', TYPES.Int, id);
-
-    return request;
-}
-
 function getPatientWithDevid(deviceId) {
     sql = `SELECT * FROM patient WHERE dev_id = ${deviceId}`;
 
