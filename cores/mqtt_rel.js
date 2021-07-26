@@ -14,8 +14,15 @@ function CreateMQTTClient(username, iokey, topicIn) {
         client.subscribe(topicIn);
         console.log(`IN Connected to ${topicIn}!`);
     });
-    
-    client.on('reconnect', () => console.log("reconnect!"));
+
+    client.on('connect', function () {
+        client.subscribe(topicOut);
+        console.log(`OUT Connected to ${topicOut}!`);
+    });
+
+    // client.on('reconnect', () => console.log("reconnect!"));
+    // client.on('reconnect'
+
     return client;
 }
 

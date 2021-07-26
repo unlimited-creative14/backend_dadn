@@ -5,69 +5,60 @@ const { Request, TYPES } = require('tedious');
 const connection = db.connection;
 const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs');
-// Validation
 const dotenv = require('dotenv');
 dotenv.config();
-//const { registerValidation, loginValidation } = require('../utils/validation');
 
-// done event may fall in to 1 of 3 events below
-function onSqlDone(sqlreq, cb) {
-    sqlreq.on('done', cb);
-    sqlreq.on('doneProc', cb);
-    sqlreq.on('doneInProc', cb);
-}
+const { loginValidation } = require('../utils/validation');
+// TODO LoginDto
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     LoginDto:
+ *       type: object
+ *       properties:
+ *         email:
+ *           type: string
+ *           description: The email of the user
+ *         password:
+ *           type: string
+ *           description: The password of the user
+ *       example:
+ *         email: malongnhan@gmail.com
+ *         password: "malongnhan"
+ */
 
-router.post('/signup', (req, res) => {
-    const { error } = registerValidation(req.body);
-    if (error)
-        return res.status(400).send({
-            message: error.details[0].message,
-            code: '400',
-        });
 
-    // const checkIfExisted = `SELECT * FROM users WHERE email = ${req.body.email}`;
-    // const checkRequest = new Request(checkIfExisted, (err) => {
-    //     if (err) throw 'Err on Check request';
-    // });
-
-    // checkRequest.on('row', (cols) => {
-    //     if (cols.length > 0)
-    //         return res.send({
-    //             message: 'Email is existed, please using another email',
-    //             code: '400',
-    //         });
-    // });
-
-    // checkRequest.on('requestCompleted', () => {
-    // TODO Hash the password
-    const salt = bcryptjs.genSaltSync(10);
-    const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
-    const date = new Date();
-    const sql = `INSERT INTO users (email, password, created_on, modified_on) VALUES (@email, @password, @created_on, @modified_on);`;
-    const request = new Request(sql, (err) => {
-        if (err) {
-            throw 'Err on signup request';
-        }
-    });
-
-    request.addParameter('email', TYPES.NVarChar, req.body.email);
-    request.addParameter('password', TYPES.NVarChar, hashedPassword);
-    request.addParameter('created_on', TYPES.DateTime, date);
-    request.addParameter('modified_on', TYPES.DateTime, date);
-
-    request.on('requestCompleted', () =>
-        res.send({
-            message: 'Created Success fully',
-            status: '201',
-        })
-    );
-    connection.execSql(request);
-    // });
-
-    // connection.execSql(checkRequest);
+/**
+ * @swagger
+ * /user/login:
+ *   post:
+ *     summary: User login
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginDto'
+ *     responses:
+ *       200:
+ *         description: Login successfully
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Failure'
+ */
+router.get('/', (req, res) => {
+    return res.send('aloha');
 });
 
-router.post('/signin', (req, res) => {
+router.post('/user/login', (req, res) => {
     const { error } = loginValidation(req.body);
     if (error)
         return res.status(400).send({
@@ -75,28 +66,23 @@ router.post('/signin', (req, res) => {
             code: '400',
         });
 
-    const sql = `SELECT * FROM users WHERE email = @email`;
+    const sql = `SELECT * FROM users WHERE email = @email and role = @role`;
     const request = new Request(sql, (err) => {
         if (err) {
             throw 'Err on signup api';
         }
     });
     request.addParameter('email', TYPES.NVarChar, req.body.email);
+    request.addParameter('role', TYPES.Int, 0);
     const resData = [];
     request.on('row', (cols) => {
-        for (const key in cols) {
-            if (Object.hasOwnProperty.call(cols, key)) {
-                const element = cols[key];
-                delete element.metadata;
-            }
-        }
         resData.push(cols);
     });
     request.on('requestCompleted', () => {
         if (resData.length < 1)
             return res.send({
-                message: 'Please enter a valid email',
-                code: '400',
+                message: `Email is not existed`,
+                code: 400,
             });
         else if (resData.length > 0) {
             const validPass = bcryptjs.compareSync(
@@ -106,14 +92,13 @@ router.post('/signin', (req, res) => {
             if (!validPass)
                 return res.status(400).send({
                     message: 'Invalid password',
-                    code: '400',
+                    code: 400,
                 });
             else {
                 const token = jwt.sign(resData[0], process.env.TOKEN_SECRET);
-                return res.status(200).send({
-                    authToken: token,
+                return res.header('auth-token', token).status(200).send({
                     message: 'Login successfully',
-                    code: '200',
+                    code: 200,
                 });
             }
         }
@@ -121,4 +106,82 @@ router.post('/signin', (req, res) => {
     connection.execSql(request);
 });
 
+/**
+ * @swagger
+ * /admin/login:
+ *   post:
+ *     summary: Admin login
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginDto'
+ *     responses:
+ *       200:
+ *         description: Login successfully
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         contents:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Failure'
+ */
+
+
+router.post('/admin/login', (req, res) => {
+    const { error } = loginValidation(req.body);
+    if (error)
+        return res.status(400).send({
+            message: error.details[0].message,
+            code: '400',
+        });
+
+    const sql = `SELECT * FROM users WHERE email = @email and role = @role`;
+    const request = new Request(sql, (err) => {
+        if (err) {
+            return res.send({
+                message: 'Error when login',
+                code: 400,
+            });
+        }
+    });
+    request.addParameter('email', TYPES.NVarChar, req.body.email);
+    request.addParameter('role', TYPES.Int, 1);
+    const resData = [];
+    request.on('row', (cols) => {
+        resData.push(cols);
+    });
+    request.on('requestCompleted', () => {
+        if (resData.length < 1)
+            return res.send({
+                message: `Account is not existed`,
+                code: 400,
+            });
+        else if (resData.length > 0) {
+            const validPass = bcryptjs.compareSync(
+                req.body.password,
+                resData[0].password.value
+            );
+            if (!validPass)
+                return res.status(400).send({
+                    message: 'Invalid password',
+                    code: 400,
+                });
+            else {
+                const token = jwt.sign(resData[0], process.env.TOKEN_SECRET);
+                return res.header('auth-token', token).status(200).send({
+                    message: 'Login successfully',
+                    code: 200,
+                });
+            }
+        }
+    });
+    connection.execSql(request);
+});
 module.exports = router;
+    

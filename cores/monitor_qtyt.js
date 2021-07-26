@@ -9,7 +9,7 @@ activeMonitors = {};
 username = "pipe1404"
 iokey = "aio_cLfx276mOhM4xaSiAn0WcCuqBI88"
 class monitor {
-    constructor(patid, device) {
+    constructor(username, iokey, patid, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
             username,
             iokey,

@@ -4,7 +4,7 @@ var router = express.Router();
 var db = require('../cores/azure_db')
 
 const connection = db.connection
-// get temp data in n lastest day
+// get temp data in n latest day
 router.get(
     '/tempdata/:patid-:hours', 
     function(req, res, next) {

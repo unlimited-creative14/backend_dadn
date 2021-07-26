@@ -2,77 +2,72 @@ var express = require('express');
 var router = express.Router();
 var db = require('../cores/azure_db');
 
-connection = db.newConnection();
+connection = db.connection;
 // list all qtyt
-router.get('/getQtyt', function (req, res, next) {
-    rq = db.queryQtyt();
-    data = [];
-    rq.on('row', (cols) => {
-        db.removeMetadata(cols);
-        data.push(cols);
-    });
-    rq.on('requestCompleted', () => {
-        console.log('done');
-        res.json(data);
+
+router.get('/qtyt', function (req, res, next) {
+    const request = db.queryQtyt();
+    const resdata = [];
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
+        }
+        resdata.push(cols);
     });
 
-    db.connection.execSql(rq);
+    request.on('requestCompleted', () => {
+        res.status(200).send(resdata);
+    });
+
+    connection.execSql(request);
 });
 
 // list qtyt with id
-router.get('/getQtyt/:level', function (req, res, next) {
+router.get('/qtyt/:level', function (req, res, next) {
     if (req.params['level'] > '3' || req.params['level'] < '0') {
-        res.status(404).send('Not found!');
-        return;
+        return res.status(404).send('Not found!');
     }
 
-    rq = db.queryQtyt(req.params['level']);
-    data = [];
-    rq.on('row', (cols) => {
-        db.removeMetadata(cols);
-        data.push(cols);
+    const request = db.queryQtyt(req.params['level']);
+    const resdata = [];
+
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
+        }
+        resdata.push(cols);
     });
-    rq.on('requestCompleted', () => {
-        res.json(data);
+
+    request.on('requestCompleted', () => {
+        res.status(200).send(resdata);
     });
 
-    db.connection.execSql(rq);
+    connection.execSql(request);
 });
-
-// update qtyt
-router.post('/updateQtyt', (req, res) => {
-    if (req.body.warning_level > '3' || req.body.warning_level < 0) {
-        res.status(404).send('Not found!');
-        return;
-    }
-
-    rb = db.updateQtyt(req.body);
-    rb.on('requestCompleted', () => res.status(200).send('Ok'));
-
-    db.connection.execSql(rb);
-});
-
 
 // get device
-router.get('/getDevice/:inuse?', (req, res) => {
-    if (req.params.inuse != undefined) {
-        if (req.params.inuse != 'inuse') {
-            res.status(404).send('Not Found!');
-            return;
+router.get('/device/:inuse?', (req, res) => {
+    const request = db.queryDevice(req.params.inuse);
+    const resdata = [];
+
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
         }
-    }
-    var inuse =
-        req.params.inuse == undefined ? undefined : req.params.inuse == 'inuse';
-    var rq = db.queryDevice(req.params.inuse);
-    data = [];
-    rq.on('row', (col) => {
-        db.removeMetadata(col);
-        data.push(col);
+        resdata.push(cols);
     });
 
-    rq.on('requestCompleted', () => res.json(data));
+    request.on('requestCompleted', () => {
+        res.status(200).send(resdata);
+    });
 
-    db.connection.execSql(rq);
+    connection.execSql(request);
 });
 
 module.exports = router;
