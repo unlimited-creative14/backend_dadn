@@ -6,17 +6,19 @@ var eventEmitter = new events.EventEmitter();
 activeDevices = [];
 qtyt = [];
 activeMonitors = {};
-
+username = "pipe1404"
+iokey = "aio_cLfx276mOhM4xaSiAn0WcCuqBI88"
 class monitor {
     constructor(username, iokey, patid, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
             username,
             iokey,
-            device.feed_in.value,
-            device.feed_out.value
+            device.feed_in.value
         );
 
         this.dbconnection = db.newConnection();
+        this.device = device
+        var thiz = this;
         this.dbconnection.on('connect', () => {
             this.mqttconnection.on('message', function (topic, message) {
                 // message is Buffer
@@ -38,9 +40,9 @@ class monitor {
                             rq.on('row', (col) =>
                                 activeMonitors[pat_id].putData(col)
                             );
-                            this.dbconnection.execSql(rq);
+                            thiz.dbconnection.execSql(rq);
                         });
-                        this.dbconnection.execSql(rqx);
+                        thiz.dbconnection.execSql(rqx);
                     } catch (error) {
                         console.log(error + '\n' + 'message:' + message);
                     }
@@ -138,6 +140,7 @@ class monitor {
                     'inrange',
                     qtyt[i],
                     this.pat_id,
+                    this.device,
                     this.qtytAvg[i]
                 );
             }
@@ -153,7 +156,7 @@ warning_str = {
 };
 
 // handle qtyt event
-eventEmitter.on('inrange', (qt, pat_id, avgtemp) => {
+eventEmitter.on('inrange', (qt, pat_id, device, avgtemp) => {
     // when a qt is activated
     // do post notification here
     //{ id":"6", "name":"TRAFFIC", "data":"x","unit":""}
@@ -179,8 +182,9 @@ eventEmitter.on('inrange', (qt, pat_id, avgtemp) => {
     }
 
     console.log(warning_str[outStr]);
+
     client.publish(
-        this.activeDevices[pat_id].feed_out,
+        device.feed_out.value,
         `{ "id":"6", "name":"TRAFFIC", "data":"${outStr}","unit":""}`
     );
 });

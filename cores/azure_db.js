@@ -6,21 +6,18 @@ const {
     activeMonitors,
 } = require('./monitor_qtyt');
 
-const dotenv = require('dotenv');
-dotenv.config();
-
 // Create connection to database
 const config = {
     authentication: {
         options: {
-            userName: process.env.authUserName, // update me
-            password: process.env.authPassword, // update me
+            userName: 'malongnhan', // update me
+            password: 'Philong8*', // update me
         },
         type: 'default',
     },
-    server: process.env.server, // updated
+    server: 'dadn-db-new.database.windows.net', // updated
     options: {
-        database: process.env.optionsDatabase, //update me
+        database: 'dadn-db-new', //update me
         encrypt: true,
         useColumnNames: true,
     },
@@ -147,6 +144,7 @@ function queryQtyt(level) {
 function updateQtyt(body) {
     sql =
         'UPDATE qtyt SET temp_from = @tfrom, temp_to = @tto, duration = @duration WHERE warning_level = @wl';
+
     request = new Request(sql, commonRequestCallback);
     request.addParameter('wl', TYPES.Int, body.warning_level);
     request.addParameter('tfrom', TYPES.Float, body.temp_from);
@@ -155,6 +153,7 @@ function updateQtyt(body) {
 
     return request;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

@@ -3,7 +3,7 @@ var db = require('./azure_db');
 putTempData = db.putTempData;
 console.log('Begin connect to Mqtt');
 
-function CreateMQTTClient(username, iokey, topicIn, topicOut) {
+function CreateMQTTClient(username, iokey, topicIn) {
     const connectionOpts = {
         port: 8883,
         username: username,
@@ -22,6 +22,7 @@ function CreateMQTTClient(username, iokey, topicIn, topicOut) {
 
     // client.on('reconnect', () => console.log("reconnect!"));
     // client.on('reconnect'
+
     return client;
 }
 
