@@ -3,12 +3,40 @@ const router = express.Router();
 const db = require('../cores/azure_db');
 const { Request, TYPES } = require('tedious');
 const bcryptjs = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { registerValidation, loginValidation } = require('../utils/validation');
+const { registerValidation } = require('../utils/validation');
 const swaggerJSDoc = require('swagger-jsdoc');
 const connection = db.connection;
 const dotenv = require('dotenv');
 dotenv.config();
+
+// TODO Update Qtyt Dto
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UpdateQtytDto:
+ *       type: object
+ *       properties:
+ *         warning_level:
+ *           type: int
+ *           description: a number 0 - 3
+ *         temp_from:
+ *           type: float
+ *           description: a float number
+ *         temp_to:
+ *           type: float
+ *           description: a float number
+ *         duration:
+ *           type: float
+ *           description: a float number
+ *       example:
+ *         doctor_id: 1
+ *         temp_from: 26
+ *         temp_to: 27
+ *         duration: 15
+ * 
+ */
+
 // TODO Assign Patient Dto
 /**
  * @swagger
@@ -396,7 +424,7 @@ router.put('/patients/:patientId', (req, res) => {
  * /api/admin/users:
  *   get:
  *     summary: Returns the list of all users
- *     tags: [Admin]
+ *     tags: [Admin]    
  *     responses:
  *       200:
  *         description: The list of the users
@@ -426,6 +454,50 @@ router.get('/users', (req, res) => {
     request.on('requestCompleted', () => {
         return res.send(resdata);
     });
+
+    connection.execSql(request);
+});
+
+/**
+ * @swagger
+ * /api/admin/updateQtyt:
+ *   get:
+ *     summary: Update QTYT
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateQtytDto'
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 $ref: '#/components/schemas/UpdateSuccess'
+ *       400:
+ *         description: Failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 #ref: '#/components/schemas/Failure'
+ */
+
+// update qtyt
+router.post('/updateQtyt', (req, res) => {
+    if (req.body.warning_level > '3' || req.body.warning_level < 0) {
+        return res.status(404).send('Not found!');
+    }
+
+    request = db.updateQtyt(req.body);
+    request.on('requestCompleted', () =>
+        res.status(200).send({
+            message: 'success',
+            code: 200,
+        })
+    );
 
     connection.execSql(request);
 });
