@@ -9,13 +9,13 @@ function CreateMQTTClient(username, iokey, topicIn) {
         username: username,
         password: iokey,
     };
-    client = mqtt.connect('mqtts://io.adafruit.com', connectionOpts);
+    var client = mqtt.connect('mqtts://io.adafruit.com', connectionOpts);
     client.on('connect', function () {
         client.subscribe(topicIn);
         console.log(`IN Connected to ${topicIn}!`);
     });
     
-    client.on('reconnect', () => console.log("reconnect!"));
+    client.on('reconnect', () => console.log("reconnect!" + topicIn));
     return client;
 }
 

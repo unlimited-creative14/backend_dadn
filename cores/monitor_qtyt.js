@@ -8,41 +8,37 @@ qtyt = [];
 activeMonitors = {};
 username = "pipe1404"
 iokey = "aio_cLfx276mOhM4xaSiAn0WcCuqBI88"
+//iokey = "aio_FiVJ792ViObIg0uz8lVnYLH9tMfH"
 class monitor {
-    constructor(patid, device) {
+    constructor(pat_id, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
             username,
             iokey,
             device.feed_in.value
         );
-
+        this.pat_id = pat_id;
         this.dbconnection = db.newConnection();
         this.device = device
-        var thiz = this;
+        let thiz = this;
         this.dbconnection.on('connect', () => {
-            this.mqttconnection.on('message', function (topic, message) {
+            console.log("init dev: " + device.feed_in.value);
+            thiz.mqttconnection.on('message', function (topic, message) {
                 // message is Buffer
                 // Parse and process message here
-                if (topic == device.feed_in.value) {
+                if (topic == thiz.device.feed_in.value) {
                     // {"id":"7","name":"TEMP-HUMID","data":"x-y","unit":"*C-%"}
                     var tempSensor = JSON.parse(message);
                     try {
-                        var devid = tempSensor['id'];
                         var data = tempSensor['data'];
                         var temp = data.split('-')[0];
                         var time = Date.now();
-                        var pat_id = 0;
-                        // get patient from devid
-                        var rqx = db.getPatientWithDevid(devid);
-                        rqx.on('row', (col) => (pat_id = col.pat_id.value));
-                        rqx.on('requestCompleted', () => {
-                            var rq = db.putTempData(pat_id, time, temp);
-                            rq.on('row', (col) =>
-                                activeMonitors[pat_id].putData(col)
-                            );
-                            thiz.dbconnection.execSql(rq);
-                        });
-                        thiz.dbconnection.execSql(rqx);
+                    
+                        var rq = db.putTempData(thiz.pat_id, time, temp);
+                        rq.on('row', (col) =>
+                            activeMonitors[thiz.pat_id].putData(col)
+                        );
+                        thiz.dbconnection.execSql(rq);
+
                     } catch (error) {
                         console.log(error + '\n' + 'message:' + message);
                     }
@@ -50,7 +46,6 @@ class monitor {
             });
             this.init_data();
         });
-        this.pat_id = patid;
         this.qtytMonitor = {
             0: [],
             1: [],
@@ -117,7 +112,7 @@ class monitor {
             var popped = 0;
 
             // only process data if there are atleast 10 data points
-            if (this.qtytMonitor[i].length < 10) continue;
+            if (this.qtytMonitor[i].length < 0) continue;
 
             while (
                 (now - new Date(this.qtytMonitor[0].recv_time)) / 60000 >
@@ -138,6 +133,7 @@ class monitor {
             ) {
                 eventEmitter.emit(
                     'inrange',
+                    this.mqttconnection,
                     qtyt[i],
                     this.pat_id,
                     this.device,
@@ -156,7 +152,7 @@ warning_str = {
 };
 
 // handle qtyt event
-eventEmitter.on('inrange', (qt, pat_id, device, avgtemp) => {
+eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
     // when a qt is activated
     // do post notification here
     //{ id":"6", "name":"TRAFFIC", "data":"x","unit":""}
@@ -185,7 +181,7 @@ eventEmitter.on('inrange', (qt, pat_id, device, avgtemp) => {
 
     client.publish(
         device.feed_out.value,
-        `{ "id":"6", "name":"TRAFFIC", "data":"${outStr}","unit":""}`
+        `{"id":"6", "name":"TRAFFIC", "data":"${outStr}","unit":""}`
     );
 });
 
