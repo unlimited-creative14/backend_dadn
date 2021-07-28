@@ -10,14 +10,14 @@ const {
 const config = {
     authentication: {
         options: {
-            userName: 'malongnhan', // update me
-            password: 'Philong8*', // update me
+            userName: process.env.AUTH_USER_NAME, // update me
+            password: process.env.AUTH_PASSWORD, // update me
         },
         type: 'default',
     },
-    server: 'dadn-db-new.database.windows.net', // updated
+    server: process.env.SERVER, // updated
     options: {
-        database: 'dadn-db-new', //update me
+        database: process.env.DATABASE_OPTIONS, //update me
         encrypt: true,
         useColumnNames: true,
     },

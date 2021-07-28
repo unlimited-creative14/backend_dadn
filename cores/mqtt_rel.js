@@ -20,9 +20,6 @@ function CreateMQTTClient(username, iokey, topicIn) {
         console.log(`OUT Connected to ${topicOut}!`);
     });
 
-    // client.on('reconnect', () => console.log("reconnect!"));
-    // client.on('reconnect'
-
     return client;
 }
 

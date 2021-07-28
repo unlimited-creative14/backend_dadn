@@ -4,7 +4,9 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const swaggerUI = require('swagger-ui-express');
+const dotenv = require('dotenv');
 const swaggerJsDoc = require('swagger-jsdoc');
+dotenv.config();
 // Router
 const usersRouter = require('./routes/users');
 const statAPIRouter = require('./routes/statApi');
