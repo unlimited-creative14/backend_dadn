@@ -14,6 +14,44 @@ function onSqlDone(sqlreq, cb) {
     sqlreq.on('doneInProc', cb);
 }
 
+//TODO CreatePatientDto Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CreatePatientDto:
+ *       type: object
+ *       properties:
+ *         first_name:
+ *           type: string
+ *           description: The first name of the patient
+ *         last_name:
+ *           type: string
+ *           description: The last name of the patient
+ *         email:
+ *           type: string
+ *           description: The email of the patient
+ *         phone:
+ *           type: string
+ *           description: The phone number of the patient
+ *         dev_id:
+ *           type: int
+ *           description: The id of the device that measure the patient's temperature
+ *         doctor_id:
+ *           type: int
+ *           description: The id of the doctor who cares for this patient
+ *         status:
+ *           type: int
+ *           description: The number indicate the status of the patient
+ *       example:
+ *         first_name: long
+ *         last_name: nguyen
+ *         email: malongnhan@gmail.com
+ *         phone: "0346156078"
+ *         dev_id: 15
+ *         doctor_id: 1
+ *         status: 1
+ */
 
 // TODO Failure Schema
 /**
@@ -318,14 +356,14 @@ router.get('/patients', (req, res) => {
  * @swagger
  * /users/patients:
  *   post:
- *     summary: Doctor accept a new patient
+ *     summary: Doctor create a new patient
  *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Patients'
+ *             $ref: '#/components/schemas/CreatePatientDto'
  *     responses:
  *       201:
  *         description: The patient was successfully created
@@ -340,10 +378,11 @@ router.post('/patients', (req, res) => {
     const date = new Date();
     let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, doctor_id, status) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @doctor_id, @status)`;
     const request = new Request(sql, (err) => {
-        return res.status(400).send({
-            message: 'Patient not existed',
-            code: 400,
-        });
+        if (err)
+            return res.status(400).send({
+                message: 'Patient not existed',
+                code: 400,
+            });
     });
 
     request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);

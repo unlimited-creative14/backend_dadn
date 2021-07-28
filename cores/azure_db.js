@@ -1,11 +1,6 @@
 const { Connection, Request, TYPES } = require('tedious');
-const {
-    monitor,
-    activeDevices,
-    qtyt,
-    activeMonitors,
-} = require('./monitor_qtyt');
-
+const { monitor, qtyt, activeMonitors } = require('./monitor_qtyt');
+const activeDevices = [];
 // Create connection to database
 const config = {
     authentication: {
@@ -38,20 +33,18 @@ connection.on('connect', (err) => {
             request.on('requestCompleted', () => {
                 for (const dev of activeDevices) {
                     let new_conn = this.newConnection();
-                    new_conn.on("connect", (err) => {
-                        var rqp = getPatientWithDevid(dev.dev_id.value);                    
+                    new_conn.on('connect', (err) => {
+                        var rqp = getPatientWithDevid(dev.dev_id.value);
                         rqp.on('row', (pat) => {
                             activeMonitors[pat.pat_id.value] = new monitor(
-                                process.env.USER_NAME,
-                                process.env.IO_KEY,
                                 pat.pat_id.value,
                                 dev
                             );
                         });
                         new_conn.execSql(rqp);
-                    })                    
+                    });
                     new_conn.connect();
-                }   
+                }
             });
             connection.execSql(request);
         });

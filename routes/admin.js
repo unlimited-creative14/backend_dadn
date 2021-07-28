@@ -502,4 +502,8 @@ router.post('/updateQtyt', (req, res) => {
     connection.execSql(request);
 });
 
+
+router.post('device', (req, res) => {
+    
+})
 module.exports = router;

@@ -1,44 +1,43 @@
 const db = require('./azure_db');
 const mqtt = require('./mqtt_rel');
-var events = require('events');
-var eventEmitter = new events.EventEmitter();
+let events = require('events');
+let eventEmitter = new events.EventEmitter();
 
-activeDevices = [];
-qtyt = [];
-activeMonitors = {};
-username = "pipe1404"
-iokey = "aio_cLfx276mOhM4xaSiAn0WcCuqBI88"
-//iokey = "aio_FiVJ792ViObIg0uz8lVnYLH9tMfH"
+let qtyt = [];
+let activeMonitors = {};
+const username = process.env.USER_NAME;
+const ioKey = process.env.IO_KEY;
+//ioKey = "aio_FiVJ792ViObIg0uz8lVnYLH9tMfH"
 class monitor {
     constructor(pat_id, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
             username,
-            iokey,
+            ioKey,
             device.feed_in.value
         );
+        console.log('monitor');
         this.pat_id = pat_id;
-        this.dbconnection = db.newConnection();
-        this.device = device
+        this.dbConnection = db.newConnection();
+        this.device = device;
         let thiz = this;
-        this.dbconnection.on('connect', () => {
-            console.log("init dev: " + device.feed_in.value);
+        this.dbConnection.on('connect', () => {
+            console.log('init dev: ' + device.feed_in.value);
             thiz.mqttconnection.on('message', function (topic, message) {
                 // message is Buffer
                 // Parse and process message here
                 if (topic == thiz.device.feed_in.value) {
                     // {"id":"7","name":"TEMP-HUMID","data":"x-y","unit":"*C-%"}
-                    var tempSensor = JSON.parse(message);
+                    let tempSensor = JSON.parse(message);
                     try {
-                        var data = tempSensor['data'];
-                        var temp = data.split('-')[0];
-                        var time = Date.now();
-                    
-                        var rq = db.putTempData(thiz.pat_id, time, temp);
-                        rq.on('row', (col) =>
+                        let data = tempSensor['data'];
+                        let temp = data.split('-')[0];
+                        let time = Date.now();
+
+                        let request = db.putTempData(thiz.pat_id, time, temp);
+                        request.on('row', (col) =>
                             activeMonitors[thiz.pat_id].putData(col)
                         );
-                        thiz.dbconnection.execSql(rq);
-
+                        thiz.dbConnection.execSql(request);
                     } catch (error) {
                         console.log(error + '\n' + 'message:' + message);
                     }
@@ -53,33 +52,33 @@ class monitor {
             3: [],
         };
         this.qtytAvg = [0, 0, 0, 0];
-        this.dbconnection.connect();
+        this.dbConnection.connect();
     }
 
     init_data() {
         // load data needed by qtyt
-        var rq = [];
-        rq.push(db.queryTempData(this.pat_id, qtyt[0].duration.value));
-        rq.push(db.queryTempData(this.pat_id, qtyt[1].duration.value));
-        rq.push(db.queryTempData(this.pat_id, qtyt[2].duration.value));
-        rq.push(db.queryTempData(this.pat_id, qtyt[3].duration.value));
+        let request = [];
+        request.push(db.queryTempData(this.pat_id, qtyt[0].duration.value));
+        request.push(db.queryTempData(this.pat_id, qtyt[1].duration.value));
+        request.push(db.queryTempData(this.pat_id, qtyt[2].duration.value));
+        request.push(db.queryTempData(this.pat_id, qtyt[3].duration.value));
         for (let i = 0; i < 4; i++) {
-            rq[i].on('row', (cols) => this.qtytMonitor[i].push(cols));
+            request[i].on('row', (cols) => this.qtytMonitor[i].push(cols));
         }
 
-        rq[0].on('requestCompleted', () => {
-            rq[1].on('requestCompleted', () => {
-                rq[2].on('requestCompleted', () => {
-                    rq[3].on('requestCompleted', () => {
+        request[0].on('requestCompleted', () => {
+            request[1].on('requestCompleted', () => {
+                request[2].on('requestCompleted', () => {
+                    request[3].on('requestCompleted', () => {
                         this.nextThing();
                     });
-                    this.dbconnection.execSql(rq[3]);
+                    this.dbConnection.execSql(request[3]);
                 });
-                this.dbconnection.execSql(rq[2]);
+                this.dbConnection.execSql(request[2]);
             });
-            this.dbconnection.execSql(rq[1]);
+            this.dbConnection.execSql(request[1]);
         });
-        this.dbconnection.execSql(rq[0]);
+        this.dbConnection.execSql(request[0]);
     }
 
     nextThing() {
@@ -87,11 +86,11 @@ class monitor {
         // calc avg
         for (let i = 0; i < 4; i++) {
             if (this.qtytMonitor[i].length != 0) {
-                var x = this.qtytMonitor[i].reduce(
+                let x = this.qtytMonitor[i].reduce(
                     (a, b) => a + b.temp_value.value,
                     0
                 );
-                var y = this.qtytMonitor[i].length;
+                let y = this.qtytMonitor[i].length;
 
                 this.qtytAvg[i] = x / y;
             } else {
@@ -103,13 +102,13 @@ class monitor {
 
     // put next value to monitor
     putData(newValue) {
-        var now = new Date(Date.now());
+        let now = new Date(Date.now());
         for (let i = 0; i < 4; i++) {
             // push new value to 4 sample qtyt data array
             // while pop out value which is "outdated"
-            var currLength = this.qtytMonitor[i].length;
+            let currLength = this.qtytMonitor[i].length;
             this.qtytMonitor[i].push(newValue);
-            var popped = 0;
+            let popped = 0;
 
             // only process data if there are atleast 10 data points
             if (this.qtytMonitor[i].length < 0) continue;
@@ -178,6 +177,7 @@ eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
     }
 
     console.log(warning_str[outStr]);
+    console.log(device.feed_out.value);
 
     client.publish(
         device.feed_out.value,
@@ -185,7 +185,6 @@ eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
     );
 });
 
-exports.activeDevices = activeDevices;
 exports.qtyt = qtyt;
 exports.activeMonitors = activeMonitors;
 exports.monitor = monitor;

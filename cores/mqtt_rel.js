@@ -9,7 +9,7 @@ function CreateMQTTClient(username, iokey, topicIn) {
         username: username,
         password: iokey,
     };
-    var client = mqtt.connect('mqtts://io.adafruit.com', connectionOpts);
+    const client = mqtt.connect(process.env.BROKER_URL, connectionOpts);
     client.on('connect', function () {
         client.subscribe(topicIn);
         console.log(`IN Connected to ${topicIn}!`);
