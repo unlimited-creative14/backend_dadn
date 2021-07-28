@@ -43,8 +43,13 @@ router.get('/getAllPatients', (req, res) => {
     if (!req.query.name) sql = `SELECT * FROM patient ORDER BY pat_id desc`;
     else
         sql = `SELECT * FROM patient WHERE patient.first_name LIKE @query OR patient.last_name LIKE @query order by pat_id desc`;
-    const request = new Request(sql, (err) => {
-        if (err) throw `Err on getAllPatients api`;
+    const request = new Request(sql, (err) => 
+	{
+                        return res.status(400).send(
+						{
+						message: 'Patient not existed',
+						code: 400,
+						});
     });
     const resdata = [];
     if (req.query.name)

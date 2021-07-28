@@ -1,26 +1,18 @@
 const { Connection, Request, TYPES } = require('tedious');
-const {
-    monitor,
-    activeDevices,
-    qtyt,
-    activeMonitors,
-} = require('./monitor_qtyt');
-
-const dotenv = require('dotenv');
-dotenv.config();
-
+const { monitor, qtyt, activeMonitors } = require('./monitor_qtyt');
+const activeDevices = [];
 // Create connection to database
 const config = {
     authentication: {
         options: {
-            userName: process.env.authUserName, // update me
-            password: process.env.authPassword, // update me
+            userName: process.env.AUTH_USER_NAME, // update me
+            password: process.env.AUTH_PASSWORD, // update me
         },
         type: 'default',
     },
-    server: process.env.server, // updated
+    server: process.env.SERVER, // updated
     options: {
-        database: process.env.optionsDatabase, //update me
+        database: process.env.DATABASE_OPTIONS, //update me
         encrypt: true,
         useColumnNames: true,
     },
@@ -36,13 +28,13 @@ connection.on('connect', (err) => {
         rqtyt.on('row', (qt) => qtyt.push(qt));
         rqtyt.on('requestCompleted', () => {
             // load active device
-            rq = queryDevice(true);
-            rq.on('row', (dev) => activeDevices.push(dev));
-            rq.on('requestCompleted', () => {
+            request = queryDevice('true');
+            request.on('row', (dev) => activeDevices.push(dev));
+            request.on('requestCompleted', () => {
                 for (const dev of activeDevices) {
                     let new_conn = this.newConnection();
-                    new_conn.on("connect", (err) => {
-                        var rqp = getPatientWithDevid(dev.dev_id.value);                    
+                    new_conn.on('connect', (err) => {
+                        var rqp = getPatientWithDevid(dev.dev_id.value);
                         rqp.on('row', (pat) => {
                             activeMonitors[pat.pat_id.value] = new monitor(
                                 pat.pat_id.value,
@@ -50,11 +42,11 @@ connection.on('connect', (err) => {
                             );
                         });
                         new_conn.execSql(rqp);
-                    })                    
+                    });
                     new_conn.connect();
-                }   
+                }
             });
-            connection.execSql(rq);
+            connection.execSql(request);
         });
         connection.execSql(rqtyt);
     }
@@ -85,45 +77,31 @@ function removeMetadata(cols) {
 
 function insertTempData(patid, time, tempValue) {
     console.log(`putTempData(${patid}, ${time}, ${tempValue})`);
-    sqlStr =
+    sql =
         'INSERT INTO temp_history(pat_id, recv_time, temp_value) OUTPUT INSERTED.* VALUES (@patid,@time,@value)';
-    req = new Request(sqlStr, commonRequestCallback);
-    req.addParameter('patid', TYPES.Int, patid);
-    req.addParameter('time', TYPES.DateTime, new Date(time));
-    req.addParameter('value', TYPES.Float, tempValue);
+    request = new Request(sql, commonRequestCallback);
+    request.addParameter('patid', TYPES.Int, patid);
+    request.addParameter('time', TYPES.DateTime, new Date(time));
+    request.addParameter('value', TYPES.Float, tempValue);
 
-    return req;
+    return request;
 }
 
-function getPatient(id)
-{
-    sqlStr = 'SELECT * FROM patient';
-    if (id)
-    {
-        sqlStr += ' WHERE pat_id = @patid';
-    }
+function getPatientWithDevid(deviceId) {
+    sql = `SELECT * FROM patient WHERE dev_id = ${deviceId}`;
 
-    req = new Request(sqlStr, commonRequestCallback);
-    req.addParameter('patid', TYPES.Int, id);
-
-    return req;
-}
-
-function getPatientWithDevid(devid) {
-    sqlStr = `SELECT * FROM patient WHERE dev_id = ${devid}`;
-
-    return new Request(sqlStr, commonRequestCallback);
+    return new Request(sql, commonRequestCallback);
 }
 
 function queryDevice(inuse) {
-    if (inuse == true)
-        sqlstr =
+    if (inuse == 'true')
+        sql =
             'select * from device where dev_id in (select dev_id from patient)';
-    else if (inuse == undefined) sqlstr = 'SELECT * FROM device';
-    else if (inuse == false)
-        sqlstr =
+    else if (inuse == undefined) sql = 'SELECT * FROM device';
+    else if (inuse == 'false')
+        sql =
             'select * from device where dev_id not in (select dev_id from patient)';
-    return new Request(sqlstr, commonRequestCallback);
+    return new Request(sql, commonRequestCallback);
 }
 
 //time ago unit is minute
@@ -138,34 +116,37 @@ function queryTempData(patID, time_ago) {
           ` recv_time > DATEADD(Minute, ${-time_ago}, @now)`
         : '';
 
-    req = new Request(baseSqlstr, commonRequestCallback);
-    if (time_ago) req.addParameter('now', TYPES.DateTime, new Date(Date.now()));
+    request = new Request(baseSqlstr, commonRequestCallback);
+    if (time_ago)
+        request.addParameter('now', TYPES.DateTime, new Date(Date.now()));
 
-    return req;
+    return request;
 }
 
 function queryQtyt(level) {
-    sqlStr = '';
+    sql = '';
     if (!level) {
-        sqlStr = `SELECT * FROM qtyt ORDER BY warning_level`;
+        sql = `SELECT * FROM qtyt ORDER BY warning_level`;
     } else {
-        sqlStr = `SELECT * FROM qtyt WHERE warning_level = ${level}`;
+        sql = `SELECT * FROM qtyt WHERE warning_level = ${level}`;
     }
 
-    return new Request(sqlStr, commonRequestCallback);
+    return new Request(sql, commonRequestCallback);
 }
 
-function updateQtyt(qtyt) {
-    sqlStr =
+function updateQtyt(body) {
+    sql =
         'UPDATE qtyt SET temp_from = @tfrom, temp_to = @tto, duration = @duration WHERE warning_level = @wl';
-    req = new Request(sqlStr, commonRequestCallback);
-    req.addParameter('wl', TYPES.Int, qtyt.warning_level);
-    req.addParameter('tfrom', TYPES.Float, qtyt.temp_from);
-    req.addParameter('tto', TYPES.Float, qtyt.temp_to);
-    req.addParameter('duration', TYPES.Float, qtyt.duration);
 
-    return req;
+    request = new Request(sql, commonRequestCallback);
+    request.addParameter('wl', TYPES.Int, body.warning_level);
+    request.addParameter('tfrom', TYPES.Float, body.temp_from);
+    request.addParameter('tto', TYPES.Float, body.temp_to);
+    request.addParameter('duration', TYPES.Float, body.duration);
+
+    return request;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -183,9 +164,3 @@ exports.getPatientWithDevid = getPatientWithDevid;
 exports.removeMetadata = removeMetadata;
 exports.updateQtyt = updateQtyt;
 exports.queryTempData = queryTempData;
-// Long's Utils export
-// exports.createRequest = createRequest;
-// exports.executeRequest = executeRequest;
-// exports.configureRequest = configureRequest;
-// exports.runQuery = runQuery;
-// exports.getPatient = getPatient;
