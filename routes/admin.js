@@ -65,5 +65,48 @@ router.post('/addUser', (req, res, next) => {
 router.put('assignPatient/:doctorId', (req, res) => {
     res.send('assign patient to a doctor');
 });
+/**
+ * @swagger
+ * /api/admin/updateQtyt:
+ *   get:
+ *     summary: Update QTYT
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateQtytDto'
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 $ref: '#/components/schemas/UpdateSuccess'
+ *       400:
+ *         description: Failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 #ref: '#/components/schemas/Failure'
+ */
+
+// fix update qtyt
+router.post('/updateQtyt', (req, res) => {
+    if (req.body.warning_level > '3' || req.body.warning_level < 0) {
+        return res.status(404).send('Not found!');
+    }
+
+    request = db.updateQtyt(req.body);
+    request.on('requestCompleted', () =>
+        res.status(200).send({
+            message: 'success',
+            code: 200,
+        })
+    );
+
+    connection.execSql(request);
+});
 
 module.exports = router;
