@@ -10,7 +10,7 @@ dotenv.config();
 // Router
 const usersRouter = require('./routes/users');
 const statAPIRouter = require('./routes/statApi');
-const authenticateROUTER = require('./routes/authenticate.js');
+//const authenticateROUTER = require('./routes/authenticate.js');
 const coreAPIRouter = require('./routes/coreApi.js');
 const adminAPIRouter = require('./routes/admin');
 const { verifyToken } = require('./utils/validation');
