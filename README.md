@@ -1,7 +1,12 @@
-# backend_dadn
-Create .env file with the following variables:
+
 TOKEN_SECRET=
-authUserName=
-authPassword=
-server=
-optionsDatabase
+AUTH_USER_NAME=
+AUTH_PASSWORD= 
+SERVER=
+DATABASE_OPTIONS=
+port=3000
+
+# MQTT
+USER_NAME=
+IO_KEY=
+BROKER_URL=
