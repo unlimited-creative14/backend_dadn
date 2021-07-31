@@ -9,6 +9,75 @@ const connection = db.connection;
 const dotenv = require('dotenv');
 dotenv.config();
 
+// TODO PatientResponseDto Schema
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     PatientResponseDto:
+ *       type: object
+ *       properties:
+ *         pat_id:
+ *           type: int
+ *           description: The auto-generated id of the patient
+ *         first_name:
+ *           type: string
+ *           description: The first name of the patient
+ *         last_name:
+ *           type: string
+ *           description: The last name of the patient
+ *         email:
+ *           type: string
+ *           description: The email of the patient
+ *         phone:
+ *           type: string
+ *           description: The phone number of the patient
+ *         created_on:
+ *           type: date time
+ *           description: the date and time that patient enter the hospital
+ *         modified_on:
+ *           type: date time
+ *           description: the last time that patient modified
+ *         dev_id:
+ *           type: int
+ *           description: The id of the device of the patient
+ *         doctor_id:
+ *           type: int
+ *           description: The id of the doctor who cares for this patient
+ *         status_id:
+ *           type: int
+ *           description: The status of the patient;
+ *       example:
+ *         pat_id: 1
+ *         first_name: long
+ *         last_name: nguyen
+ *         email: malongnhan@gmail.com
+ *         phone: "0346156078"
+ *         created_on: 2020-12-12T00:00:00.0000000
+ *         modified_on: 2020-12-12T00:00:00.0000000
+ *         dev_id: 1
+ *         doctor_id: 1
+ *         status: 1
+ */
+// TODO Create Device Dto
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CreateDeviceDto:
+ *       type: object
+ *       properties:
+ *         feed_in:
+ *           type: string
+ *           description: mqtt feed_in
+ *         feed_out:
+ *           type: string
+ *           description: mqtt feed_out
+ *       example:
+ *         feed_in: "malongnhan/feeds/server"
+ *         feed_out: "malongnhan/feeds/anotherfeed"
+ */
+
 // TODO Update Qtyt Dto
 /**
  * @swagger
@@ -221,7 +290,7 @@ dotenv.config();
 // TODO Insert a new user
 /**
  * @swagger
- * /api/admin/user:
+ * /admin/user:
  *   post:
  *     summary: Insert a new user
  *     tags: [Admin]
@@ -284,7 +353,7 @@ router.post('/user', (req, res) => {
         const salt = bcryptjs.genSaltSync(10);
         const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
         const date = new Date();
-        const sql = `INSERT INTO users (email, password, role,  created_on, modified_on) VALUES (@email, @password, @role,  @created_on, @modified_on)`;
+        const sql = `INSERT INTO users (email, password, role,  created_on, modified_on, first_name, last_name, cmnd) VALUES (@email, @password, @role,  @created_on, @modified_on, @first_name, @last_name, @cmnd)`;
         const request = new Request(sql, (err) => {
             if (err) {
                 console.log(err.message);
@@ -296,6 +365,10 @@ router.post('/user', (req, res) => {
         request.addParameter('created_on', TYPES.DateTime, date);
         request.addParameter('modified_on', TYPES.DateTime, date);
         request.addParameter('role', TYPES.Int, req.body.role || 0);
+        request.addParameter('first_name', TYPES.VarChar, req.body.first_name);
+        request.addParameter('last_name', TYPES.VarChar, req.body.last_name);
+        request.addParameter('cmnd', TYPES.VarChar, req.body.cmnd);
+
 
         request.on('requestCompleted', () =>
             res.send({
@@ -312,7 +385,7 @@ router.post('/user', (req, res) => {
 // TODO Insert a new patient
 /**
  * @swagger
- * /api/admin/patients:
+ * /admin/patients:
  *   post:
  *     summary: Insert a new patient
  *     tags: [Admin]
@@ -368,7 +441,7 @@ router.post('/patients', (req, res) => {
 
 /**
  * @swagger
- * /api/admin/patients/{patientId}:
+ * /admin/patients/{patientId}:
  *   put:
  *     summary: Assign a patient with a doctor
  *     tags: [Admin]
@@ -421,7 +494,7 @@ router.put('/patients/:patientId', (req, res) => {
 
 /**
  * @swagger
- * /api/admin/users:
+ * /admin/users:
  *   get:
  *     summary: Returns the list of all users
  *     tags: [Admin]    
@@ -460,8 +533,8 @@ router.get('/users', (req, res) => {
 
 /**
  * @swagger
- * /api/admin/updateQtyt:
- *   get:
+ * /admin/qtyt:
+ *   put:
  *     summary: Update QTYT
  *     tags: [Admin]
  *     requestBody:
@@ -486,12 +559,12 @@ router.get('/users', (req, res) => {
  */
 
 // update qtyt
-router.post('/updateQtyt', (req, res) => {
+router.put('/qtyt', (req, res) => {
     if (req.body.warning_level > '3' || req.body.warning_level < 0) {
         return res.status(404).send('Not found!');
     }
 
-    request = db.updateQtyt(req.body);
+    const request = db.updateQtyt(req.body);
     request.on('requestCompleted', () =>
         res.status(200).send({
             message: 'success',
@@ -503,7 +576,155 @@ router.post('/updateQtyt', (req, res) => {
 });
 
 
-router.post('device', (req, res) => {
-    
-})
+
+/**
+ * @swagger
+ * /admin/device:
+ *   post:
+ *     summary: Create new device
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateDeviceDto'
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 $ref: '#/components/schemas/UpdateSuccess'
+ *       400:
+ *         description: Failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 #ref: '#/components/schemas/Failure'
+ */
+// TODO Add new device
+router.post('/device', (req, res) => {
+    const sql =
+        'insert into device (feed_in, feed_out) values(@feed_in, @feed_out)';
+    const request = new Request(sql, (err) => {
+        if (err)
+            return res.status(400).send({
+                message: 'Error when create request',
+                code: 400,
+            });
+    });
+    try {
+        request.addParameter('feed_in', TYPES.VarChar, req.body.feed_in);
+        request.addParameter('feed_out', TYPES.VarChar, req.body.feed_out);
+    } catch (err) {
+        return res.status(400).send({
+            message: 'Invalid format',
+            code: 400,
+        });
+    }
+
+    request.on('requestCompleted', () => {
+        return res.status(200).send({
+            message: 'success',
+            code: 200,
+        });
+    });
+    connection.execSql(request);
+});
+
+/**
+ * @swagger
+ * /admin/patients:
+ *   get:
+ *     summary: Returns the list of all patients
+ *     tags: [Admin]    
+ *     responses:
+ *       200:
+ *         description: The list of the patients
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PatientResponseDto'
+ */
+// TODO Get all patients 
+router.get('/patients', (req, res) => {
+    let sql = `SELECT * FROM patient order by patient.pat_id`;
+    const request = new Request(sql, (err) => {
+        if (err) return res.status(400).send({
+            message: 'Err on admin get all patients request',
+            code: 400,
+        });
+    });
+    const resdata = [];
+
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
+        }
+        resdata.push(cols);
+    });
+
+    request.on('requestCompleted', () => {
+        return res.send(resdata);
+    });
+
+    connection.execSql(request);
+});
+
+
+/**
+ * @swagger
+ * /admin/doctor/{doctor_id}/patients:
+ *   get:
+ *     summary: Returns the list of all patients
+ *     tags: [Admin]    
+ *     parameters:
+ *       - in: path
+ *         name: doctor_id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The id of the doctor
+ *     responses:
+ *       200:
+ *         description: The list of the patients
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PatientResponseDto'
+ */
+// TODO Admin get all patients of a doctor by doctor_id 
+router.get('/doctor/:doctor_id/patients', (req, res) => {
+    let sql = `SELECT * FROM patient where patient.doctor_id = @doctor_id`;
+    const request = new Request(sql, (err) => {
+        if (err) return res.status(400).send({
+            message: 'Err on admin get all patients of a doctor by doctor_id request',
+            code: 400,
+        });
+    });
+    const resdata = [];
+    request.addParameter('doctor_id', TYPES.Int, req.params.doctor_id);
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
+        }
+        resdata.push(cols);
+    });
+
+    request.on('requestCompleted', () => {
+        return res.send(resdata);
+    });
+
+    connection.execSql(request);
+});
+
 module.exports = router;

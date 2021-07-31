@@ -7,7 +7,6 @@ let qtyt = [];
 let activeMonitors = {};
 const username = process.env.USER_NAME;
 const ioKey = process.env.IO_KEY;
-//ioKey = "aio_FiVJ792ViObIg0uz8lVnYLH9tMfH"
 class monitor {
     constructor(pat_id, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
