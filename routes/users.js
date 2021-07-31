@@ -7,13 +7,6 @@ const connection = db.connection;
 const dotenv = require('dotenv');
 dotenv.config();
 
-// done event may fall in to 1 of 3 events below
-function onSqlDone(sqlreq, cb) {
-    sqlreq.on('done', cb);
-    sqlreq.on('doneProc', cb);
-    sqlreq.on('doneInProc', cb);
-}
-
 //TODO CreatePatientDto Schema
 /**
  * @swagger
@@ -40,9 +33,6 @@ function onSqlDone(sqlreq, cb) {
  *         doctor_id:
  *           type: int
  *           description: The id of the doctor who cares for this patient
- *         status:
- *           type: int
- *           description: The number indicate the status of the patient
  *       example:
  *         first_name: long
  *         last_name: nguyen
@@ -50,7 +40,6 @@ function onSqlDone(sqlreq, cb) {
  *         phone: "0346156078"
  *         dev_id: 15
  *         doctor_id: 1
- *         status: 1
  */
 
 // TODO Failure Schema
@@ -99,35 +88,11 @@ function onSqlDone(sqlreq, cb) {
  *     UpdatePatientDto:
  *       type: object
  *       properties:
- *         first_name:
- *           type: string
- *           description: The first name of the patient
- *         last_name:
- *           type: string
- *           description: The last name of the patient
- *         email:
- *           type: string
- *           description: The email of the patient
- *         phone:
- *           type: string
- *           description: The phone number of the patient
  *         dev_id:
  *           type: int
  *           description: The id of the device that measure the patient's temperature
- *         doctor_id:
- *           type: int
- *           description: The id of the doctor who cares for this patient
- *         status:
- *           type: int
- *           description: The number indicate the status of the patient
  *       example:
- *         first_name: long
- *         last_name: nguyen
- *         email: malongnhan@gmail.com
- *         phone: "0346156078"
  *         dev_id: 1
- *         doctor_id: 1
- *         status: 1
  */
 // TODO Patients schema
 /**
@@ -164,9 +129,6 @@ function onSqlDone(sqlreq, cb) {
  *         doctor_id:
  *           type: int
  *           description: The id of the doctor who cares for this patient
- *         status:
- *           type: int
- *           description: The number indicate the status of the patient
  *       example:
  *         pat_id: 1
  *         first_name: long
@@ -177,7 +139,6 @@ function onSqlDone(sqlreq, cb) {
  *         modified_on: 2020-12-12T00:00:00.0000000
  *         dev_id: 1
  *         doctor_id: 1
- *         status: 1
  */
 
 // TODO Failure schema
@@ -325,10 +286,11 @@ function onSqlDone(sqlreq, cb) {
 router.get('/patients', (req, res) => {
     let sql;
     if (!req.query.name)
-        sql = `SELECT * FROM patient where patient.doctor_id = @doctor_id ORDER BY pat_id desc`;
+        sql = `SELECT * FROM patient where patient.doctor_id = @doctor_id`;
     else
         sql = `SELECT * FROM patient WHERE patient.first_name LIKE @query OR patient.last_name LIKE @query and patient.doctor_id = @doctor_id order by pat_id desc `;
     const request = new Request(sql, (err) => {
+        console.log(err)
         if (err) throw `Err on getAllPatients api`;
     });
     const resdata = [];
@@ -347,6 +309,27 @@ router.get('/patients', (req, res) => {
 
     request.on('requestCompleted', () => {
         res.status(200).send(resdata);
+        // resdata.map(data => {
+        //     const newRequest = new Request('select top 1 * from temp_history where pat_id = @pat_id', (err) => {
+        //         if (err) return res.send({
+        //             message: 'Error when return temperature for all patient',
+        //             code: 400
+        //         });
+        //     });
+        //     newRequest.addParameter('pat_id', TYPES.Int, data.pat_id);
+        //     newRequest.on('row', cols => {
+        //         for (const key in cols) {
+        //             if (Object.hasOwnProperty.call(cols, key)) {
+        //                 cols[key] = cols[key].value;
+        //             }
+        //         }
+        //         data.tempHistory = cols;
+        //     });
+        //     newRequest.on('requestCompleted', () => {
+        //         console.log('request completed');
+        //      });
+        //     connection.execSql(newRequest);
+        //  });
     });
 
     connection.execSql(request);
@@ -376,7 +359,7 @@ router.get('/patients', (req, res) => {
  */
 router.post('/patients', (req, res) => {
     const date = new Date();
-    let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, doctor_id, status) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @doctor_id, @status)`;
+    let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, doctor_id) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @doctor_id)`;
     const request = new Request(sql, (err) => {
         if (err)
             return res.status(400).send({
@@ -393,7 +376,6 @@ router.post('/patients', (req, res) => {
     request.addParameter('created_on', TYPES.DateTime, date);
     request.addParameter('modified_on', TYPES.DateTime, date);
     request.addParameter('doctor_id', TYPES.Int, req.body.doctor_id || 0);
-    request.addParameter('status', TYPES.Int, req.body.status || 0);
 
     request.on('requestCompleted', () =>
         res.status(200).send({
@@ -429,16 +411,20 @@ router.post('/patients', (req, res) => {
  */
 router.get('/patients/:patientId', (req, res) => {
     const sql = `select * from patient where patient.pat_id = @patientId`;
+    let result = new Object();
     const request = new Request(sql, (err) => {
         if (err)
-            res.send({
+            return res.send({
                 message: 'This patient was not found',
                 code: 400,
             });
     });
     request.addParameter('patientId', TYPES.Int, req.params.patientId);
-    let result;
     request.on('row', (cols) => {
+        if (cols.length == 0) return res.send({
+            message: `There's no patient with ${req.params.patientId} ID`,
+            code: 400,
+        });
         for (const key in cols) {
             if (Object.hasOwnProperty.call(cols, key)) {
                 cols[key] = cols[key].value;
@@ -446,18 +432,52 @@ router.get('/patients/:patientId', (req, res) => {
         }
         result = cols;
     });
-    onSqlDone(request, (a, b, c) => {
-        if (!res.headersSent) return res.send(result);
+    request.on('requestCompleted', () => {
+        if (!result.pat_id) return res.send({
+            message: `There's no patient with id = ${req.params.patientId}`,
+            code: 400,
+        });
+        result.tempHistory = [];
+        const newSql = `select top 10 * from temp_history where pat_id = @patientId order by recv_time desc`;
+        const newRequest = new Request(newSql, err => {
+            if (err)
+                return res.send({
+                    message: 'Error when get temperature of the patient',
+                    code: 400,
+                });
+        });
+        newRequest.addParameter('patientId', TYPES.Int, req.params.patientId);
+        newRequest.on('row', (cols) => {
+            for (const key in cols) {
+                if (Object.hasOwnProperty.call(cols, key)) {
+                    cols[key] = cols[key].value;
+                }
+            }
+            result.tempHistory.push(cols);
+        });
+        console.log(result);
+        newRequest.on('requestCompleted', () => {
+            res.send(result)
+        })
+        connection.execSql(newRequest);
+
     });
     connection.execSql(request);
 });
 
 /**
  * @swagger
- * /users/patients:
+ * /users/patients/{patientId}:
  *   put:
  *     summary: Modify information of a patient
  *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: patientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The patient id
  *     requestBody:
  *       required: true
  *       content:
@@ -479,7 +499,7 @@ router.get('/patients/:patientId', (req, res) => {
  */
 router.put('/patients/:patientId', (req, res) => {
     const date = new Date();
-    const sql = `update patient set first_name = @first_name, last_name = @last_name, email = @email, phone = @phone, modified_on = @modified_on, dev_id = @dev_id, doctor_id = @doctor_id, "status" = @status where patient.pat_id = @pat_id`;
+    const sql = `update patient set modified_on = @modified_on, dev_id = @dev_id where patient.pat_id = @pat_id`;
 
     const request = new Request(sql, (err) => {
         if (err) {
@@ -489,83 +509,13 @@ router.put('/patients/:patientId', (req, res) => {
             });
         }
     });
-    request.addParameter('first_name', TYPES.VarChar, req.body.first_name);
-    request.addParameter('last_name', TYPES.VarChar, req.body.last_name);
-    request.addParameter('email', TYPES.VarChar, req.body.email);
-    request.addParameter('phone', TYPES.VarChar, req.body.phone);
     request.addParameter('modified_on', TYPES.DateTime, date);
     request.addParameter('dev_id', TYPES.Int, req.body.dev_id || 0);
-    request.addParameter('doctor_id', TYPES.Int, req.body.doctor_id);
-    request.addParameter('status', TYPES.Int, req.body.status);
     request.addParameter('pat_id', TYPES.Int, req.params.patientId);
 
     request.on('requestCompleted', () =>
         res.status(200).send({
             message: 'success',
-            code: 200,
-        })
-    );
-    connection.execSql(request);
-});
-
-/**
- * @swagger
- * /users/patients/{patientId}/treatments:
- *   post:
- *     summary: Insert a new treatment to a patient
- *     tags: [Users]
- *     parameters:
- *       - in: path
- *         name: patientId
- *         schema:
- *           type: string
- *         required: true
- *         description: The patient id
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Treatments'
- *     responses:
- *       200:
- *         description: Insert a new treatment successfully
- *         contents:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       400:
- *         contents:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Failure'
- */
-
-router.post('/patients/:patientId/treatments', (req, res) => {
-    if (req.body.treatment_id > 3 || req.body.treatment_id < 1)
-        return res.send({
-            message: 'Invalid treatment',
-            code: 400,
-        });
-    const date = new Date();
-    const sql = `insert into treatment_patient (treatment_id, patient_id, last_modified) values(@treatment_id, @patient_id, @last_modified)`;
-    const request = new Request(sql, (err) => {
-        if (err)
-            res.send({
-                message: 'This patient was not found',
-                code: 400,
-            });
-    });
-    request.addParameter('treatment_id', TYPES.Int, req.body.treatment_id);
-    request.addParameter(
-        'patient_id',
-        TYPES.Int,
-        parseInt(req.params.patientId)
-    );
-    request.addParameter('last_modified', TYPES.DateTime, date);
-    request.on('requestCompleted', () =>
-        res.status(200).send({
-            message: 'Insert treatment successfully',
             code: 200,
         })
     );
@@ -625,9 +575,9 @@ router.get('/patients/:patientId/treatments', (req, res) => {
         }
         result.push(cols);
     });
-    onSqlDone(request, () => {
-        if (!res.headersSent) return res.send(result);
-    });
+    request.on('requestCompleted', () =>
+            res.send(result)
+        );
     connection.execSql(request);
 });
 
@@ -653,8 +603,10 @@ router.get('/profile', (req, res) => {
         created_on: req.user.created_on.value,
         modified_on: req.user.modified_on.value,
         role: req.user.role.value,
+        first_name: req.user.first_name,
+        last_name: req.user.last_name,
+        cmnd: req.user.cmnd,
     });
 });
-
 
 module.exports = router;
