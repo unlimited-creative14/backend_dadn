@@ -40,10 +40,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/documentation', swaggerUI.serve, swaggerUI.setup(specs));
 app.use('/users',verifyToken, usersRouter);
-app.use('/api/stat', statAPIRouter);
+app.use('/stat', statAPIRouter);
 app.use('/', authenticateROUTER);
-app.use('/api/core', coreAPIRouter);
-app.use('/api/admin', adminAPIRouter);
+app.use('/both', coreAPIRouter);
+app.use('/admin', adminAPIRouter);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     next(createError(404));
