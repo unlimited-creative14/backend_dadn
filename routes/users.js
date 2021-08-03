@@ -290,8 +290,11 @@ router.get('/patients', (req, res) => {
     else
         sql = `SELECT * FROM patient WHERE patient.first_name LIKE @query OR patient.last_name LIKE @query and patient.doctor_id = @doctor_id order by pat_id desc `;
     const request = new Request(sql, (err) => {
-        console.log(err)
-        if (err) throw `Err on getAllPatients api`;
+        if (err)
+            res.send({
+                message: 'Error on get all patient in users',
+                code: 400,
+            });
     });
     const resdata = [];
     request.addParameter('doctor_id', TYPES.Int, req.user.id.value);

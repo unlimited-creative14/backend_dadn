@@ -10,7 +10,6 @@
     "azureFunctions.projectRuntime": "~3",
     "debug.internalConsoleOptions": "neverOpen",
     "azureFunctions.preDeployTask": "npm prune",
-    "appService.defaultWebAppToDeploy": "/subscriptions/995f1aad-75a6-4641-bae4-5b837ebcbba4/resourceGroups/DefaultResourceGroup-SEA/providers/Microsoft.Web/sites/mydadn",
     "sqltools.connections": [
         {
             "mysqlOptions": {
@@ -26,5 +25,6 @@
             "database": "dadnDB",
             "username": "root"
         }
-    ]
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/995f1aad-75a6-4641-bae4-5b837ebcbba4/resourceGroups/DefaultResourceGroup-SEA/providers/Microsoft.Web/sites/mydadn"
 }

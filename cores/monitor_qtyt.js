@@ -1,17 +1,16 @@
 const db = require('./azure_db');
 const mqtt = require('./mqtt_rel');
 let events = require('events');
+const { Request, TYPES } = require('tedious');
 let eventEmitter = new events.EventEmitter();
 
 let qtyt = [];
 let activeMonitors = {};
-const username = process.env.USER_NAME;
-const ioKey = process.env.IO_KEY;
 class monitor {
     constructor(pat_id, device) {
         this.mqttconnection = mqtt.CreateMQTTClient(
-            username,
-            ioKey,
+            device.username.value,
+            device.iokey.value,
             device.feed_in.value
         );
         console.log('monitor');
@@ -145,10 +144,37 @@ class monitor {
 warning_str = {
     '00': 'Binh thuong',
     '01': 'Sot nhe',
-    '11': 'Sot nang',
-    '10': 'Nguy hiem',
+    11: 'Sot nang',
+    10: 'Nguy hiem',
 };
 
+const insertTreatment = (patId, warningLevel) => {
+    switch (warningLevel) {
+    }
+    const date = new Date();
+    const sql = `insert into treatment_patient (treatment_id, patient_id, last_modified) values(@treatment_id, @patient_id, @last_modified)`;
+    const request = new Request(sql, (err) => {
+        if (err)
+            res.send({
+                message: 'This patient was not found',
+                code: 400,
+            });
+    });
+    request.addParameter('treatment_id', TYPES.Int, req.body.treatment_id);
+    request.addParameter(
+        'patient_id',
+        TYPES.Int,
+        parseInt(req.params.patientId)
+    );
+    request.addParameter('last_modified', TYPES.DateTime, date);
+    request.on('requestCompleted', () =>
+        res.status(200).send({
+            message: 'Insert treatment successfully',
+            code: 200,
+        })
+    );
+    connection.execSql(request);
+};
 // handle qtyt event
 eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
     // when a qt is activated
@@ -174,10 +200,17 @@ eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
         default:
             break;
     }
+    const sql = `Insert into treatment_patient (treatment_id, patient_id, last_modified) values (@treatment_id, @patient_id, @last_modified)`;
+    const now = new Date();
+    const request = new Request(sql, (err) => console.log(err));
 
+    request.addParameter('treatment_id', TYPES.Int, qt.warning_level.value);
+    request.addParameter('patient_id', TYPES.Int, pat_id);
+    request.addParameter('last_modified', TYPES.DateTime, now);
+
+    db.connection.execSql(request);
     console.log(warning_str[outStr]);
     console.log(device.feed_out.value);
-
     client.publish(
         device.feed_out.value,
         `{"id":"6", "name":"TRAFFIC", "data":"${outStr}","unit":""}`
