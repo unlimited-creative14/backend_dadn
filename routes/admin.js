@@ -7,7 +7,6 @@ const { registerValidation } = require('../utils/validation');
 const swaggerJSDoc = require('swagger-jsdoc');
 const connection = db.connection;
 const dotenv = require('dotenv');
-const { Types } = require('mysql');
 dotenv.config();
 
 // TODO PatientResponseDto Schema
@@ -74,9 +73,17 @@ dotenv.config();
  *         feed_out:
  *           type: string
  *           description: mqtt feed_out
+ *         iokey:
+ *           type: string
+ *           description: The iokey of the device
+ *         username:
+ *           type: string
+ *           description: The username of a device
  *       example:
  *         feed_in: "malongnhan/feeds/server"
  *         feed_out: "malongnhan/feeds/anotherfeed"
+ *         iokey: anIOkey
+ *         username: malongnhan
  */
 
 // TODO Update Qtyt Dto
@@ -620,7 +627,7 @@ router.put('/qtyt', (req, res) => {
 // TODO Add new device
 router.post('/device', (req, res) => {
     const sql =
-        'insert into device (feed_in, feed_out) values(@feed_in, @feed_out)';
+        'insert into device (feed_in, feed_out, iokey, username) values(@feed_in, @feed_out, @iokey, @username)';
     const request = new Request(sql, (err) => {
         if (err)
             return res.status(400).send({
@@ -631,6 +638,8 @@ router.post('/device', (req, res) => {
     try {
         request.addParameter('feed_in', TYPES.VarChar, req.body.feed_in);
         request.addParameter('feed_out', TYPES.VarChar, req.body.feed_out);
+        request.addParameter('iokey', TYPES.VarChar, req.body.iokey);
+        request.addParameter('username', TYPES.VarChar, req.body.username);
     } catch (err) {
         return res.status(400).send({
             message: 'Invalid format',

@@ -210,6 +210,7 @@ eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
 
     db.connection.execSql(request);
     console.log(warning_str[outStr]);
+    console.log('feedout ======');
     console.log(device.feed_out.value);
     client.publish(
         device.feed_out.value,

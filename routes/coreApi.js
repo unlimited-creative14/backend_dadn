@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+const { Request, TYPES } = require('tedious');
 const swaggerJSDoc = require('swagger-jsdoc');
 
 var db = require('../cores/azure_db');
@@ -49,10 +50,18 @@ connection = db.connection;
  *         feed_out:
  *           type: string
  *           description: The feed_out of a device
+ *         iokey:
+ *           type: string
+ *           description: The iokey of the device
+ *         username:
+ *           type: string
+ *           description: The username of a device
  *       example:
  *         dev_id: 1
  *         feed_in: username/feeds/name
  *         feed_out: username/feeds/name
+ *         iokey: anIOkey
+ *         username: malongnhan
  */
 
 /**
@@ -117,7 +126,7 @@ router.get('/qtyt/:level', function (req, res, next) {
     if (req.params['level'] > '3' || req.params['level'] < '0') {
         return res.status(404).send({
             message: 'qtyt not found',
-            code: 400
+            code: 400,
         });
     }
 
@@ -180,6 +189,55 @@ router.get('/device/:inuse?', (req, res) => {
 
     request.on('requestCompleted', () => {
         res.status(200).send(resdata);
+    });
+
+    connection.execSql(request);
+});
+
+/**
+ * @swagger
+ * /both/devices/{deviceId}:
+ *   get:
+ *     summary: Returns information of all the patients of this use
+ *     tags: [Both]
+ *     parameters:
+ *       - in: path
+ *         name: deviceId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: 1
+ *     responses:
+ *       200:
+ *         description: The information of a device by id
+ *         content:
+ *           application/json:
+ *             schema:
+ *                 $ref: '#/components/schemas/DeviceResponseDto'
+ */
+router.get('/devices/:deviceId', (req, res) => {
+    const sql = `SELECT * FROM device where dev_id = @deviceId`;
+
+    const request = new Request(sql, (err) => {
+        if (err) {
+            return res.status(400).send({
+                message: 'error when get device by id',
+                code: 400,
+            });
+        }
+    });
+    request.addParameter('deviceId', TYPES.Int, req.params.deviceId);
+    let result;
+    request.on('row', (cols) => {
+        for (const key in cols) {
+            if (Object.hasOwnProperty.call(cols, key)) {
+                cols[key] = cols[key].value;
+            }
+        }
+        result = cols;
+    });
+    request.on('requestCompleted', (err) => {
+        res.status(200).send(result);
     });
 
     connection.execSql(request);
