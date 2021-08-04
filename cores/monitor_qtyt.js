@@ -19,7 +19,7 @@ class monitor {
         this.device = device;
         let thiz = this;
         this.dbConnection.on('connect', () => {
-            console.log('init dev: ' + device.feed_in.value);   
+            console.log('init dev: ' + device.feed_in.value);
             thiz.mqttconnection.on('message', function (topic, message) {
                 // message is Buffer
                 // Parse and process message here
@@ -29,7 +29,9 @@ class monitor {
                     try {
                         let data = tempSensor['data'];
                         let temp = data.split('-')[0];
-                        let time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
+                        let time = new Date().toLocaleString('en-US', {
+                            timeZone: 'Asia/Saigon',
+                        });
 
                         let request = db.putTempData(thiz.pat_id, time, temp);
                         request.on('row', (col) =>
@@ -97,7 +99,6 @@ class monitor {
         }
         console.log(`Monitor pat_id=${this.pat_id} started`);
     }
-
     // put next value to monitor
     putData(newValue) {
         let now = new Date(Date.now());
@@ -187,7 +188,7 @@ eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
     console.log(device.feed_out.value);
     client.publish(
         device.feed_out.value,
-        `{"id":"6", "name":"TRAFFIC", "data":"${outStr}","unit":""}`
+        `{"id":"6", "name":"TRAFFIC", "data":"${outStr}", "unit":""}`
     );
 });
 

@@ -64,7 +64,7 @@ commonRequestCallback = (err, rowCount) => {
 function removeMetadata(cols) {
     for (const key in cols) {
         if (Object.hasOwnProperty.call(cols, key)) {
-            const element = cols[key];
+            const element = cols[key];t
             delete element.metadata;
         }
     }

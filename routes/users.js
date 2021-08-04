@@ -555,7 +555,7 @@ router.put('/patients/:patientId', (req, res) => {
  */
 
 router.get('/patients/:patientId/treatments', (req, res) => {
-    const sql = `select * from treatment_patient where treatment_id in (select treatment_id from treatment_patient where patient_id = @patient_id)`;
+    const sql = `select * from treatment_patient where treatment_id in (select treatment_id from treatment_patient where patient_id = @patient_id) and patient_id = @patientId`;
     const request = new Request(sql, (err) => {
         if (err)
             res.send({
@@ -569,6 +569,7 @@ router.get('/patients/:patientId/treatments', (req, res) => {
         TYPES.Int,
         parseInt(req.params.patientId)
     );
+    request.addParameter('patientId', TYPES.Int, req.params.patientId);
     let result = [];
     request.on('row', (cols) => {
         for (const key in cols) {
