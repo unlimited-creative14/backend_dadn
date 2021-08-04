@@ -118,7 +118,13 @@ function queryTempData(patID, time_ago) {
 
     request = new Request(baseSqlstr, commonRequestCallback);
     if (time_ago)
-        request.addParameter('now', TYPES.DateTime, new Date(Date.now()));
+        request.addParameter(
+            'now',
+            TYPES.DateTime,
+            new Date(
+                new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' })
+            )
+        );
 
     return request;
 }

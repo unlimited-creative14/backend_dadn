@@ -372,7 +372,7 @@ router.post('/user', (req, res) => {
         // TODO Hash the password
         const salt = bcryptjs.genSaltSync(10);
         const hashedPassword = bcryptjs.hashSync(req.body.password, salt);
-        const date = new Date();
+        const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
         let sql = `INSERT INTO users (email, password, role, created_on, modified_on,
         first_name, last_name, cmnd) VALUES (@email, @password, @role,  @created_on, @modified_on, @first_name, @last_name, @cmnd)`;
 
@@ -434,7 +434,7 @@ router.post('/user', (req, res) => {
  */
 
 router.post('/patients', (req, res) => {
-    const date = new Date();
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
     let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, doctor_id) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @doctor_id)`;
     const request = new Request(sql, (err) => {
         if (err)
@@ -491,7 +491,7 @@ router.post('/patients', (req, res) => {
 
 // TODO assign patient to a doctor
 router.put('/patients/:patientId', (req, res) => {
-    const date = new Date();
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
     const sql = `update patient set doctor_id = @doctor_id where patient.pat_id = @pat_id`;
 
     const request = new Request(sql, (err) => {
@@ -814,7 +814,7 @@ router.get('/doctor/:doctor_id/patients', (req, res) => {
  *                 $ref: '#/components/schemas/UpdateSuccess'
  */
 router.put('/patients/:patientId/update', (req, res) => {
-    const date = new Date();
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
     const sql = `update patient set first_name = @first_name, last_name = @last_name, doctor_id = @doctor_id, modified_on = @modified_on, dev_id = @dev_id, phone = @phone, email= @email where patient.pat_id = @pat_id`;
 
     const request = new Request(sql, (err) => {
@@ -902,7 +902,7 @@ router.put('/patients/:patientId/update', (req, res) => {
  *                 $ref: '#/components/schemas/UpdateSuccess'
  */
 router.put('/user/:userId/update', (req, res) => {
-    const date = new Date();
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
     const sql = `update users set first_name = @first_name, last_name = @last_name, modified_on = @modified_on, email= @email, role = @role, cmnd = @cmnd where users.id = @userId`;
 
     const request = new Request(sql, (err) => {

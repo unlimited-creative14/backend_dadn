@@ -361,7 +361,7 @@ router.get('/patients', (req, res) => {
  *         description: Some server error
  */
 router.post('/patients', (req, res) => {
-    const date = new Date();
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
     let sql = `INSERT INTO patient (dev_id, first_name, last_name, email, phone, created_on, modified_on, doctor_id) VALUES (@dev_id, @first_name, @last_name, @email, @phone, @created_on, @modified_on, @doctor_id)`;
     const request = new Request(sql, (err) => {
         if (err)
@@ -501,7 +501,7 @@ router.get('/patients/:patientId', (req, res) => {
  *               $ref: '#/components/schemas/Failure'
  */
 router.put('/patients/:patientId', (req, res) => {
-    const date = new Date();
+    const date = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' })
     const sql = `update patient set modified_on = @modified_on, dev_id = @dev_id where patient.pat_id = @pat_id`;
 
     const request = new Request(sql, (err) => {

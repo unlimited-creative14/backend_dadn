@@ -19,7 +19,7 @@ class monitor {
         this.device = device;
         let thiz = this;
         this.dbConnection.on('connect', () => {
-            console.log('init dev: ' + device.feed_in.value);
+            console.log('init dev: ' + device.feed_in.value);   
             thiz.mqttconnection.on('message', function (topic, message) {
                 // message is Buffer
                 // Parse and process message here
@@ -29,7 +29,7 @@ class monitor {
                     try {
                         let data = tempSensor['data'];
                         let temp = data.split('-')[0];
-                        let time = Date.now();
+                        let time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
 
                         let request = db.putTempData(thiz.pat_id, time, temp);
                         request.on('row', (col) =>
@@ -148,33 +148,6 @@ warning_str = {
     10: 'Nguy hiem',
 };
 
-const insertTreatment = (patId, warningLevel) => {
-    switch (warningLevel) {
-    }
-    const date = new Date();
-    const sql = `insert into treatment_patient (treatment_id, patient_id, last_modified) values(@treatment_id, @patient_id, @last_modified)`;
-    const request = new Request(sql, (err) => {
-        if (err)
-            res.send({
-                message: 'This patient was not found',
-                code: 400,
-            });
-    });
-    request.addParameter('treatment_id', TYPES.Int, req.body.treatment_id);
-    request.addParameter(
-        'patient_id',
-        TYPES.Int,
-        parseInt(req.params.patientId)
-    );
-    request.addParameter('last_modified', TYPES.DateTime, date);
-    request.on('requestCompleted', () =>
-        res.status(200).send({
-            message: 'Insert treatment successfully',
-            code: 200,
-        })
-    );
-    connection.execSql(request);
-};
 // handle qtyt event
 eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
     // when a qt is activated
@@ -201,7 +174,7 @@ eventEmitter.on('inrange', (client, qt, pat_id, device, avgtemp) => {
             break;
     }
     const sql = `Insert into treatment_patient (treatment_id, patient_id, last_modified) values (@treatment_id, @patient_id, @last_modified)`;
-    const now = new Date();
+    const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Saigon' });
     const request = new Request(sql, (err) => console.log(err));
 
     request.addParameter('treatment_id', TYPES.Int, qt.warning_level.value);
